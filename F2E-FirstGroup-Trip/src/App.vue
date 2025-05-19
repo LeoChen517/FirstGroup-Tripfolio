@@ -1,10 +1,17 @@
 <script setup>
-import { RouterLink, RouterView } from "vue-router";
-import HelloWorld from "./components/HelloWorld.vue";
+import { RouterLink, RouterView } from 'vue-router';
+
 </script>
 
 <template>
-  <RouterView />
+  <div>
+    <nav>
+      <router-link to="/profile">會員基本資料</router-link>
+    </nav>
+    <router-view />
+  </div>
 </template>
 
-<style scoped></style>
+<style>
+
+</style>

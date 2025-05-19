@@ -1,16 +1,16 @@
 <script setup>
-import WelcomeItem from './WelcomeItem.vue'
-import DocumentationIcon from './icons/IconDocumentation.vue'
-import ToolingIcon from './icons/IconTooling.vue'
-import EcosystemIcon from './icons/IconEcosystem.vue'
-import CommunityIcon from './icons/IconCommunity.vue'
-import SupportIcon from './icons/IconSupport.vue'
+// import WelcomeItem from './WelcomeItem.vue'
+// import DocumentationIcon from './icons/IconDocumentation.vue'
+// import ToolingIcon from './icons/IconTooling.vue'
+// import EcosystemIcon from './icons/IconEcosystem.vue'
+// import CommunityIcon from './icons/IconCommunity.vue'
+// import SupportIcon from './icons/IconSupport.vue'
 
-const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
+// const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
 </script>
 
 <template>
-  <WelcomeItem>
+  <!-- <WelcomeItem>
     <template #icon>
       <DocumentationIcon />
     </template>
@@ -90,5 +90,5 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     As an independent project, Vue relies on community backing for its sustainability. You can help
     us by
     <a href="https://vuejs.org/sponsor/" target="_blank" rel="noopener">becoming a sponsor</a>.
-  </WelcomeItem>
+  </WelcomeItem> -->
 </template>
