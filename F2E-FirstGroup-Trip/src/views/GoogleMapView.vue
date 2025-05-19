@@ -11,46 +11,61 @@ import { ref, onMounted } from "vue";
 
 const mapRef = ref(null);
 
-onMounted(() => {
-  // 等待 Google Maps API 載入完成
-  const waitForGoogleMaps = () =>
-    new Promise((resolve) => {
-      if (window.google && window.google.maps) {
-        resolve();
-      } else {
-        // 如果還沒載入好，每 100ms 檢查一次
-        const interval = setInterval(() => {
-          if (window.google && window.google.maps) {
-            clearInterval(interval);
-            resolve();
-          }
-        }, 100);
-      }
-    });
-
-  waitForGoogleMaps().then(() => {
-    const map = new window.google.maps.Map(mapRef.value, {
-      center: { lat: 25.033964, lng: 121.564472 }, // 台北101
-      zoom: 14,
-    });
-
-    new window.google.maps.Marker({
-      position: { lat: 25.033964, lng: 121.564472 },
-      map,
-      title: "台北 101",
-    });
+function loadGoogleMaps() {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.maps) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${
+      import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    }`;
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
   });
+}
+onMounted(async () => {
+  try {
+    await loadGoogleMaps();
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLatLng = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          const map = new google.maps.Map(mapRef.value, {
+            center: userLatLng,
+            zoom: 15,
+          });
+
+          new google.maps.Marker({
+            position: userLatLng,
+            map,
+            title: "你在這裡！",
+          });
+        },
+        () => {
+          alert("⚠️ 無法取得你的定位！");
+        }
+      );
+    } else {
+      alert("你的瀏覽器不支援定位功能");
+    }
+  } catch (err) {
+    alert("❌ Google Maps 載入失敗");
+    console.error(err);
+  }
 });
 </script>
 
 <style scoped>
-html,
-body,
-#app {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
 .map-container {
   width: 100vw;
   height: 100vh;

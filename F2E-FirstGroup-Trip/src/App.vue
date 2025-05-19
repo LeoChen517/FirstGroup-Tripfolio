@@ -9,13 +9,4 @@ import { RouterLink, RouterView } from "vue-router";
   <RouterView />
 </template>
 
-<style scoped>
-* {
-  margin: 0;
-  padding: 0;
-}
-#app {
-  margin: 0;
-  padding: 0;
-}
-</style>
+<style scoped></style>
