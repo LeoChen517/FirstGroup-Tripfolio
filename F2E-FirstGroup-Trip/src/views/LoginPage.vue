@@ -24,6 +24,7 @@
         </div>
   
         <button type="submit" class="btn btn-primary">登入</button>
+        <button type="submit" class="btn btn-primary">註冊</button>
       </form>
   
       <!-- 登出按鈕 -->
@@ -50,8 +51,11 @@
   }
   
   const login = async () => {
-    if (email.value === '' || password.value === '') return
-  
+    if (email.value === '' || password.value === '') {
+    showError.value = true
+    errorMessage.value = '請輸入 Email 和密碼'
+    return
+  }
     const userData = {
       user: {
         email: email.value,
@@ -68,6 +72,9 @@
       clearText()
     } catch (err) {
       showError.value = true
+      showError.value = true
+    // 嘗試讀取 API 回傳錯誤訊息
+    errorMessage.value = err.response?.data?.message || '登入失敗，請檢查帳號密碼'
     }
   }
   
@@ -79,8 +86,6 @@
       await axios.delete('https://todoo.5xcamp.us/users/sign_out', {
         headers: { Authorization: token }
       })
-    } catch (err) {
-      console.error('登出失敗', err)
     } finally {
       localStorage.removeItem(TOKEN_NAME)
       isLoggedIn.value = false
