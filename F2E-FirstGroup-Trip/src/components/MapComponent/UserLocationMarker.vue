@@ -1,13 +1,10 @@
 <script setup>
 import { onMounted, onBeforeUnmount } from "vue";
 
-const props = defineProps({
-  map: Object,
-});
+const props = defineProps({ map: Object });
+const emit = defineEmits(["update:location"]);
 
 let marker = null;
-// 加上 emit 位置給父元件
-const emit = defineEmits(["update:location"]);
 
 onMounted(() => {
   if (!props.map) return;
@@ -15,33 +12,31 @@ onMounted(() => {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const userLatLng = {
+        const latLng = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
 
-        // 建立/更新 marker
         marker = new google.maps.Marker({
-          position: userLatLng,
+          position: latLng,
           map: props.map,
-          title: "你在這裡！",
+          title: "你在這裡",
         });
 
-        props.map.setCenter(userLatLng);
+        props.map.setCenter(latLng);
+        emit("update:location", latLng);
       },
-      (err) => {
-        alert(`⚠️ 無法取得定位：${err.message}`);
+      (error) => {
+        alert("⚠️ 定位失敗：" + error.message);
       }
     );
-  } else {
-    alert("你的瀏覽器不支援定位功能");
   }
 });
 
 onBeforeUnmount(() => {
-  if (marker) {
-    marker.setMap(null); // 移除 marker
-    marker = null;
-  }
+  if (marker) marker.setMap(null);
 });
 </script>
+<template>
+  <div></div>
+</template>
