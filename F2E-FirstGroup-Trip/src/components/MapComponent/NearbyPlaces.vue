@@ -22,9 +22,9 @@ function loadNearbyPlaces(center) {
   const service = new google.maps.places.PlacesService(props.map);
 
   const request = {
-    location: center,
-    radius: 1000,
-    type: ["tourist_attraction"], // 你可以改成 library, cafe 等
+    location: new google.maps.LatLng(center.lat, center.lng),
+    radius: 2000,
+    type: "library", // 你可以改成 library, cafe 等
   };
 
   service.nearbySearch(request, (results, status) => {
@@ -37,6 +37,8 @@ function loadNearbyPlaces(center) {
         });
         markers.value.push(marker);
       });
+    } else {
+      console.warn("🔴 搜尋失敗：", status);
     }
   });
 }
