@@ -29,7 +29,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div ref="mapRef" class="map-container" style="width: 100vw; height: 100vh" />
+  <div ref="mapRef" class="map-container" />
   <UserLocationMarker
     v-if="map"
     :map="map"
