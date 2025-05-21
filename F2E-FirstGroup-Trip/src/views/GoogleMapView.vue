@@ -4,13 +4,20 @@
     class="map-container"
     style="width: 100vw; height: 100vh"
   ></div>
+  <NearbyPlaces
+    v-if="map && userLocation"
+    :map="map"
+    :location="userLocation"
+  />
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
-
+import NearbyPlaces from "../components/MapComponent/NearbyPlaces.vue";
 const mapRef = ref(null);
-
+const userLocation = ref(null);
+// 加上 emit 位置給父元件
+emit("update:location", userLatLng);
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
     if (window.google && window.google.maps) {
