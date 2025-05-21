@@ -1,23 +1,10 @@
-<template>
-  <div
-    ref="mapRef"
-    class="map-container"
-    style="width: 100vw; height: 100vh"
-  ></div>
-  <NearbyPlaces
-    v-if="map && userLocation"
-    :map="map"
-    :location="userLocation"
-  />
-</template>
-
 <script setup>
 import { ref, onMounted } from "vue";
-import NearbyPlaces from "../components/MapComponent/NearbyPlaces.vue";
+import UserLocationMarker from "../components/MapComponent/UserLocationMarker.vue";
+import NearbyPlaces from "../components/MapComponent/UserLocationMarker.vue";
 const mapRef = ref(null);
+const map = ref(null);
 const userLocation = ref(null);
-// 加上 emit 位置給父元件
-emit("update:location", userLatLng);
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
     if (window.google && window.google.maps) {
@@ -38,7 +25,7 @@ function loadGoogleMaps() {
 onMounted(async () => {
   try {
     await loadGoogleMaps();
-    new google.maps.Map(mapRef.value, {
+    map.value = new google.maps.Map(mapRef.value, {
       center: { lat: 25.033964, lng: 121.564472 }, // 這裡以台北101為例
       zoom: 15,
     });
@@ -48,6 +35,23 @@ onMounted(async () => {
   }
 });
 </script>
+<template>
+  <div
+    ref="mapRef"
+    class="map-container"
+    style="width: 100vw; height: 100vh"
+  ></div>
+  <UserLocationMarker
+    v-if="map"
+    :map="map"
+    @update:location="userLocation = $event"
+  />
+  <NearbyPlaces
+    v-if="map && userLocation"
+    :map="map"
+    :location="userLocation"
+  />
+</template>
 
 <style scoped>
 .map-container {
