@@ -8,7 +8,7 @@
           <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 
           3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
         </svg>
-        <div class="ms-2">登入失敗，請檢查帳號密碼</div>
+        <div class="ms-2">{{ errorMessage }}</div>
       </div>
   
       <!-- 登入表單 -->
@@ -38,12 +38,14 @@
   <script setup>
   import { ref, onMounted } from 'vue'
   import axios from 'axios'
+  import { useRouter } from 'vue-router'
   
   const TOKEN_NAME = 'user_token'
   const email = ref('')
   const password = ref('')
   const isLoggedIn = ref(false)
   const showError = ref(false)
+  const errorMessage = ref('')
   
   const clearText = () => {
     email.value = ''
@@ -57,15 +59,13 @@
     return
   }
     const userData = {
-      user: {
-        email: email.value,
-        password: password.value
-      }
-    }
+		email: email.value,
+		password: password.value
+	}
   
     try {
-      const res = await axios.post('https://todoo.5xcamp.us/users/sign_in', userData)
-      const token = res.headers.authorization
+      const res = await axios.post('http://localhost:3000/api/auth/login', userData)
+      const token = res.data.token
       localStorage.setItem(TOKEN_NAME, token)
       isLoggedIn.value = true
       showError.value = false
@@ -73,8 +73,7 @@
     } catch (err) {
       showError.value = true
       showError.value = true
-    // 嘗試讀取 API 回傳錯誤訊息
-    errorMessage.value = err.response?.data?.message || '登入失敗，請檢查帳號密碼'
+    errorMessage.value = err.response?.data?.message || '登入失敗，請檢查郵件與密碼'
     }
   }
   
@@ -82,11 +81,7 @@
     const token = localStorage.getItem(TOKEN_NAME)
     if (!token) return
   
-    try {
-      await axios.delete('https://todoo.5xcamp.us/users/sign_out', {
-        headers: { Authorization: token }
-      })
-    } finally {
+    finally {
       localStorage.removeItem(TOKEN_NAME)
       isLoggedIn.value = false
       clearText()
