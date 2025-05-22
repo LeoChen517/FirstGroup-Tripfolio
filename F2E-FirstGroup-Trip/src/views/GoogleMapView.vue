@@ -29,7 +29,7 @@
       <div v-if="place.photos && place.photos.length">
         <img
           :src="place.photos[0].getUrl({ maxWidth: 400 })"
-          @error="e => e.target.src = defaultImage"
+          @error="(e) => (e.target.src = defaultImage)"
           alt="地點圖片"
           style="margin-top: 10px; max-width: 100%; border-radius: 10px"
         />
@@ -47,22 +47,26 @@
         ⭐ {{ place.rating }}（共 {{ place.user_ratings_total }} 則評價）
       </p>
     </div>
+    <div v-if="hasMoreResults" class="load-more-container">
+      <button class="load-more-btn" @click="loadNextPage">🔄 載入更多</button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
-import defaultImage from '@/assets/default-image.jpg'; // 預設圖片路徑
-
+import defaultImage from "@/assets/default-image.jpg"; // 預設圖片路徑
 
 const mapRef = ref(null);
 const searchQuery = ref("");
-const searchInput = ref(null);
 const isToggled = ref(false);
 const placeDetails = ref([]);
+const nextPageFunc = ref(null); // 儲存下一頁函式
+const hasMoreResults = ref(false); // 控制是否顯示按鈕
 
 let map = null;
 let markers = [];
+let service = null;
 
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
@@ -82,93 +86,97 @@ function loadGoogleMaps() {
   });
 }
 
-//因為code太長我先獨立出來
-function initMap(userLatLng) {
+// 初始化地圖
+function initMap() {
   map = new google.maps.Map(mapRef.value, {
     center: { lat: 25.033964, lng: 121.564472 },
     zoom: 15,
     mapTypeControl: false,
     zoomControl: false,
-    cameraControl: false,
-    scaleControl: false,
-    fullscreenControl: false,
-    errorControl: true,
     streetViewControl: false,
-    streetViewControlOptions: {
-      position: google.maps.ControlPosition.LEFT_TOP,
-    }, //我先把控件關掉，有需要再開
   });
+  service = new google.maps.places.PlacesService(map);
 }
 
 function searchPlace() {
   if (!searchQuery.value || !map) return;
 
-  const service = new google.maps.places.PlacesService(map);
+  // 清除上次資料
+  markers.forEach((marker) => marker.setMap(null));
+  markers = [];
+  placeDetails.value = [];
+  nextPageFunc.value = null;
+  hasMoreResults.value = false;
+
   const request = {
-    query: searchQuery.value,
-    location: map.getCenter(),
-    radius: 5000, 
+    location: map.getCenter(),  // 使用地圖中心點作為搜尋基準
+    radius: 5000, // 半徑設為 5000 米 (5 公里)
+    keyword: searchQuery.value,  // 使用關鍵字來篩選結果
   };
 
-  service.textSearch(request, (results, status) => {
-    if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-      markers.forEach((marker) => marker.setMap(null));
-      markers = [];
-      placeDetails.value = [
-        //測試：如果沒有圖片
-        // {
-        //   name: "測試地點",
-        //   formatted_address: "測試地址",
-        //   photos: [], // 模擬沒有圖片的情況
-        //   rating: 4.5,
-        //   user_ratings_total: 100,
-        // },
-      ];
+  service.nearbySearch(request, handleResults);
+}
 
-      const bounds = new google.maps.LatLngBounds();
+function handleResults(results, status, pagination) {
+  if (status !== google.maps.places.PlacesServiceStatus.OK || !results.length) {
+    alert("找不到地點！");
+    return;
+  }
 
-      results.forEach((place) => {
-        if (!place.geometry || !place.geometry.location) return;
+  // 清除舊的標記
+  markers.forEach((marker) => marker.setMap(null));
+  markers = [];
+  placeDetails.value = [];
 
-        bounds.extend(place.geometry.location);
+  results.forEach((place) => {
+    if (!place.geometry || !place.geometry.location) return;
 
-        const marker = new google.maps.Marker({
-          map,
-          position: place.geometry.location,
-          title: place.name,
-        });
+    // 在這裡將地圖中心設置為搜尋結果的第一個地點
+    map.setCenter(place.geometry.location);  // 設定地圖的中心位置
 
-        markers.push(marker);
+    const marker = new google.maps.Marker({
+      map,
+      position: place.geometry.location,
+      title: place.name,
+    });
 
-        const detailRequest = {
-          placeId: place.place_id,
-          fields: [
-            "name",
-            "formatted_address",
-            "formatted_phone_number",
-            "opening_hours",
-            "photos",
-            "rating",
-            "user_ratings_total",
-            "website",
-          ],
-        };
+    markers.push(marker);
 
-        service.getDetails(detailRequest, (detailResult, detailStatus) => {
-          if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-            placeDetails.value.push(detailResult);
-          } else {
-            console.warn("取得詳細資料失敗：", detailStatus);
-          }
-        });
-      });
+    const detailRequest = {
+      placeId: place.place_id,
+      fields: [
+        "name",
+        "formatted_address",
+        "formatted_phone_number",
+        "opening_hours",
+        "photos",
+        "rating",
+        "user_ratings_total",
+        "website",
+      ],
+    };
 
-      map.fitBounds(bounds);
-    } else {
-      placeDetails.value = [];
-      alert("找不到地點！");
-    }
+    service.getDetails(detailRequest, (detailResult, detailStatus) => {
+      if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
+        placeDetails.value.push(detailResult);
+      }
+    });
   });
+
+  // 分頁處理
+  if (pagination && pagination.hasNextPage) {
+    nextPageFunc.value = () => pagination.nextPage();
+    hasMoreResults.value = true;
+  } else {
+    hasMoreResults.value = false;
+  }
+}
+
+
+function loadNextPage() {
+  if (nextPageFunc.value) {
+    nextPageFunc.value(); // Google 會自動再次調用 handleResults
+  }
 }
 
 onMounted(async () => {
@@ -183,6 +191,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+*{
+  font-family: "Noto Sans TC", sans-serif;
+}
 .map-container {
   width: 100vw;
   height: 100vh;
@@ -240,7 +251,6 @@ onMounted(async () => {
   width: 80px;
   height: 34px;
 }
-/* 隱藏checkbox */
 .toggle-switch input {
   opacity: 0;
   width: 0;
@@ -259,7 +269,7 @@ onMounted(async () => {
 }
 .slider::before {
   position: absolute;
-  content: "地圖"; /* 預設為關 */
+  content: "地圖";
   height: 28px;
   width: 50px;
   left: 3px;
@@ -274,7 +284,6 @@ onMounted(async () => {
   font-weight: bold;
   color: black;
 }
-/* 切換開啟狀態 */
 .toggle-switch input:checked + .slider {
   background-color: rgb(138, 134, 134);
 }
@@ -293,10 +302,9 @@ onMounted(async () => {
   padding: 10px;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 強制 5 欄 */
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
-  overflow-y: auto; /* 垂直可捲動 */
-  overflow-x: hidden; /* 禁止橫向捲動 */
+  overflow-y: auto;
 }
 .place-card {
   background-color: #e2e2e2;
@@ -305,7 +313,6 @@ onMounted(async () => {
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
 }
 .place-card img {
   max-width: 100%;
@@ -318,32 +325,36 @@ onMounted(async () => {
   width: 100%;
   font-size: 24px;
   font-weight: bold;
-  white-space: nowrap; /* 不換行 */
-  overflow: hidden; /* 超出隱藏 */
-  text-overflow: ellipsis; /* 顯示 ... */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: 8px;
 }
 .place-card p {
   width: 100%;
   font-size: 16px;
-  white-space: nowrap; /* 不換行 */
-  overflow: hidden; /* 超出隱藏 */
-  text-overflow: ellipsis; /* 顯示 ... */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: 8px;
 }
-@media (max-width: 1200px) {
-  .info-panel {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.load-more-container {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 10px;
 }
-@media (max-width: 900px) {
-  .info-panel {
-    grid-template-columns: repeat(3, 1fr);
-  }
+
+.load-more-btn {
+  background-color: #8f8f8f;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 50%;
 }
-@media (max-width: 600px) {
-  .info-panel {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.load-more-btn:hover {
+  background-color: #3a3a3a;
 }
 </style>
