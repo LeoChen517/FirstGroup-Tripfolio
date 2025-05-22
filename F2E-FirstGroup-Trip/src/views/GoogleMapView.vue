@@ -28,12 +28,15 @@
       <p :title="place.formatted_address">{{ place.formatted_address }}</p>
       <div v-if="place.photos && place.photos.length">
         <img
-    :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 400 }) : defaultImage"
-    @error="e => e.target.src = defaultImage"
-    alt="地點圖片"
-    style="margin-top: 10px; max-width: 100%; border-radius: 10px"
-  />
-
+          :src="
+            place.photos && place.photos.length
+              ? place.photos[0].getUrl({ maxWidth: 400 })
+              : defaultImage
+          "
+          @error="(e) => (e.target.src = defaultImage)"
+          alt="地點圖片"
+          style="margin-top: 10px; max-width: 100%; border-radius: 10px"
+        />
       </div>
       <!-- 如果沒有圖片，顯示預設圖片 -->
       <div v-else>
@@ -63,7 +66,7 @@ const isToggled = ref(false);
 const placeDetails = ref([]);
 const nextPageFunc = ref(null); // 儲存下一頁函式
 const hasMoreResults = ref(false); // 控制是否顯示按鈕
-const defaultImage= 'https://picsum.photos/600?image'
+const defaultImage = "https://picsum.photos/600?image";
 
 let map = null;
 let markers = [];
@@ -75,15 +78,18 @@ function loadGoogleMaps() {
       resolve();
       return;
     }
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${
-      import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-    }&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
+    // const script = document.createElement("script");
+    // script.src = `https://maps.googleapis.com/maps/api/js?key=${
+    //   import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    // }&libraries=places`;
+    // script.async = true;
+    // script.defer = true;
+    // script.onload = resolve;
+    // script.onerror = reject;
+    // document.head.appendChild(script);
+    const loader = new Loader({
+      apiKey: import.meta.env,
+    });
   });
 }
 
@@ -110,9 +116,9 @@ function searchPlace() {
   hasMoreResults.value = false;
 
   const request = {
-    location: map.getCenter(),  // 使用地圖中心點作為搜尋基準
+    location: map.getCenter(), // 使用地圖中心點作為搜尋基準
     radius: 5000, // 半徑設為 5000 米 (5 公里)
-    keyword: searchQuery.value,  // 使用關鍵字來篩選結果
+    keyword: searchQuery.value, // 使用關鍵字來篩選結果
   };
 
   service.nearbySearch(request, handleResults);
@@ -129,7 +135,7 @@ function handleResults(results, status, pagination) {
     if (!place.geometry || !place.geometry.location) return;
 
     // 在這裡將地圖中心設置為搜尋結果的第一個地點
-    map.setCenter(place.geometry.location);  // 設定地圖的中心位置
+    map.setCenter(place.geometry.location); // 設定地圖的中心位置
 
     const marker = new google.maps.Marker({
       map,
@@ -155,7 +161,7 @@ function handleResults(results, status, pagination) {
 
     service.getDetails(detailRequest, (detailResult, detailStatus) => {
       if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-        placeDetails.value.push(detailResult);  // 不清空，直接新增結果
+        placeDetails.value.push(detailResult); // 不清空，直接新增結果
       }
     });
   });
@@ -168,8 +174,6 @@ function handleResults(results, status, pagination) {
     hasMoreResults.value = false;
   }
 }
-
-
 
 function loadNextPage() {
   if (nextPageFunc.value) {
@@ -189,7 +193,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-*{
+* {
   font-family: "Noto Sans TC", sans-serif;
 }
 .map-container {
