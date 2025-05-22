@@ -91,7 +91,7 @@ function loadGoogleMaps() {
       .load()
       .then(() => {
         if (window.google && window.google.maps.places) {
-          resolve();
+          resolve("載入成功places_api");
         } else {
           reject(new Error("Places library 沒載入成功"));
         }
@@ -191,44 +191,11 @@ function loadNextPage() {
   }
 }
 
-// function findNearbyCafes(map, location) {
-//   if (!map || !location) return;
-
-//   const service = new google.maps.places.PlacesService(map);
-//   const request = {
-//     location: new google.maps.LatLng(location.lat, location.lng),
-//     radius: 500, // 公尺
-//     type: ["cafe"],
-//   };
-
-//   service.nearbySearch(request, (results, status) => {
-//     if (status === google.maps.places.PlacesServiceStatus.OK) {
-//       results.forEach((place) => {
-//         const marker = new google.maps.Marker({
-//           map,
-//           position: place.geometry.location,
-//           title: place.name,
-//         });
-
-//         const infoWindow = new google.maps.InfoWindow({
-//           content: `<strong>${place.name}</strong><br>${place.vicinity}`,
-//         });
-
-//         marker.addListener("click", () => {
-//           infoWindow.open(map, marker);
-//         });
-//       });
-//     } else {
-//       console.warn("找不到地點", status);
-//     }
-//   });
-// }
-
 onMounted(async () => {
   try {
-    await loadGoogleMaps();
+    const message = await loadGoogleMaps(); // 接住 resolve 傳回來的訊息
+    console.log("✅", message); // 顯示「載入成功」
     initMap();
-    // findNearbyCafes(map.value, { lat: 25.033964, lng: 121.564472 });
   } catch (err) {
     alert("❌ Google Maps 載入失敗");
     console.error(err);
