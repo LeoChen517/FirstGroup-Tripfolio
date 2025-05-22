@@ -63,7 +63,7 @@ const isToggled = ref(false);
 const placeDetails = ref([]);
 const nextPageFunc = ref(null); // 儲存下一頁函式
 const hasMoreResults = ref(false); // 控制是否顯示按鈕
-const defaultImage= 'https://picsum.photos/600?image'
+const defaultImage= 'https://picsum.photos/1000?image'
 
 let map = null;
 let markers = [];
