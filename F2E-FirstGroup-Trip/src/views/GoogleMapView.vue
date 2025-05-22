@@ -28,7 +28,7 @@
       <p :title="place.formatted_address">{{ place.formatted_address }}</p>
       <div v-if="place.photos && place.photos.length">
         <img
-    :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 400 }) : defaultImage"
+    :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 1000 }) : defaultImage"
     @error="e => e.target.src = defaultImage"
     alt="地點圖片"
     style="margin-top: 10px; max-width: 100%; border-radius: 10px"
