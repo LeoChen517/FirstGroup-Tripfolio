@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import SignUp from '../views/SignUp.vue'
+import Profile from '../views/Profile.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,6 +9,16 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+    },
+    {
+      path: '/signup', // ⬅️ 註冊頁路由
+      name: 'SignUp',
+      component: SignUp
+    },
+    {
+      path: '/profile', // ⬅️ 會員資料頁路由
+      name: 'Profile',
+      component: Profile
     },
     {
       path: '/about',

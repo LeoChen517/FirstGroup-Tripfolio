@@ -1,9 +1,12 @@
 <script setup>
-import TheWelcome from '../components/TheWelcome.vue'
+
 </script>
 
 <template>
   <main>
-    <TheWelcome />
+    <div class="home">
+      <h1>Tripfolio 首頁 🚧</h1>
+      <p>歡迎來到旅行規劃網站～</p>
+  </div>
   </main>
 </template>
