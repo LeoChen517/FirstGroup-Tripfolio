@@ -92,34 +92,3 @@ onMounted(async () => {
   height: 70vh;
 }
 </style>
-if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLatLng = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-
-          const map = new google.maps.Map(mapRef.value, {
-            center: userLatLng,
-            zoom: 15,
-          });
-
-          new google.maps.Marker({
-            position: userLatLng,
-            map,
-            title: "你在這裡！",
-          });
-        },
-        () => {
-          alert("⚠️ 無法取得你的定位！");
-        }
-      );
-    } else {
-      alert("你的瀏覽器不支援定位功能");
-    }
-  } catch (err) {
-    alert("❌ Google Maps 載入失敗");
-    console.error(err);
-  }
-});
