@@ -1,6 +1,6 @@
 <template>
-    <h2>這是註冊頁面</h2>
-    <form @submit.prevent="SingUp"></form>
+    <h2>註冊頁面</h2>
+    <form @submit.prevent="SingUp">
         <input v-model="email" type="email" placeholder="請輸入電子郵件" />
         <input v-model="username" type="text" placeholder="請輸入帳號" />
         <input v-model="password" type="password" placeholder="請輸入密碼" />
@@ -24,26 +24,35 @@ const router = useRouter()
 
 
 
-const SingUp = () => {
+const SingUp = async () => {
     console.log(email.value, username.value, password.value, phone.value)
+
+    if (!email.value || !username.value || !password.value || !phone.value) {
+        Swal.fire({
+            icon: 'error',
+            title: '欄位未填寫',
+            text: '請填寫所有欄位'
+        });
+        return;
+    }
 
     const existsEmail = user.find(user => user.email === email.value)
     if (existsEmail) {
         Swal.fire({
             icon: 'error',
-            title: '註冊失敗',
+            title: '電子郵件重複註冊',
             text: '電子郵件已被註冊'
         })
-        return
+        return;
     }
     const existsUsername = user.find(user => user.username === username.value)
     if (existsUsername) {
         Swal.fire({
             icon: 'error',
-            title: '註冊失敗',
+            title: '帳號重複註冊',
             text:'帳號名稱已有人使用'
         })
-        return
+        return;
     }
     // 密碼驗證（8字以上 + 英文 + 數字 + 不可與帳號相同）
     const isValidPassword = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password.value)
@@ -51,63 +60,57 @@ const SingUp = () => {
         if (!isValidPassword || !notSameAsUsername) {
         Swal.fire({
             icon: 'error',
-            title: '註冊失敗',
+            title: '密碼不符合格式',
             text:'密碼須至少8字以上 + 英數混合 ， 不可與帳號相同'
         })
-        return
+        return;
     }
     // 電話驗證（10碼，09開頭）
     const isValidPhone = /^09\d{8}$/.test(phone.value)
         if (!isValidPhone) {
             Swal.fire({
             icon: 'error',
-            title: '註冊失敗',
+            title: '手機號碼不符合格式',
             text:'手機號碼格式錯誤，必須是 09 開頭的 10 碼數字'
         })
-        return
+        return;
     }
 
     const newUser = {
-        id: Date.now(),
-        email: email.value,
-        username: username.value,
-        password: password.value,
-        phone: phone.value
-    }
-
-    users.push(newUser)
-    localStorage.setItem('users', JSON.stringify(users))
-
-  // 也可以設 currentUser 狀態，模擬登入
-    localStorage.setItem('currentUser', JSON.stringify(newUser))
-
-    alert('註冊成功！歡迎加入✨')
-    router.push(`/member`) // 導向會員頁
-
-
-
-    try {
-        const response = await axios.post('https://api.example.com/signup', {
+        user:{
+            id: Date.now(),
             email: email.value,
-            nickname: nickname.value,
+            username: username.value,
             password: password.value,
             phone: phone.value
-        })
-        if (response.status === 200) {
-            Swal.fire({
-                icon: 'success',
-                title: '註冊成功',
-                text: '註冊成功！畫面將導向會員頁'
-            })
-            router.push('/member')
-            clearText()
         }
-    } catch (error) {
+    }
+
+    // 使用 axios 發送 POST 請求
+    // 建立完後端更改為新的URL
+    try {
+        await axios.post("https://todoo.5xcamp.us/users", newUser);
+        this.clearText();
+
+        await Swal.fire({
+            icon: 'success',
+            title: '註冊成功',
+            text: '註冊成功！歡迎加入✨',
+            timer: 2000, // 2s auto-close + 自動跳轉
+            showConfirmButton: false, // 不顯示確認按鈕
+        }); 
+
+        router.push(`/profile`) 
+        // 等 Swal 的確認按鈕被按下後才導向會員頁
+
+    } catch (err) {
+        const errText = err.response?.data?.error?.join("<br />") || "註冊失敗，請稍後重試";
         Swal.fire({
             icon: 'error',
             title: '註冊失敗',
-            text: error.response.data.message
-        })
+            html: errText,
+        });
     }
 }
+
 </script>

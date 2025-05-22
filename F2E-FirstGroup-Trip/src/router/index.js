@@ -11,12 +11,12 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/signup', // ⬅️ 註冊頁路由
+      path: '/signup', // 註冊頁路徑
       name: 'SignUp',
       component: SignUp
     },
     {
-      path: '/profile', // ⬅️ 會員資料頁路由
+      path: '/profile', // 會員資料頁路徑
       name: 'Profile',
       component: Profile
     },
