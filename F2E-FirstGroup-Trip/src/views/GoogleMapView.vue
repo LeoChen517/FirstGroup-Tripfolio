@@ -59,6 +59,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import { Loader } from "@googlemaps/js-api-loader";
 
 const mapRef = ref(null);
 const searchQuery = ref("");
@@ -74,22 +75,31 @@ let service = null;
 
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
-    if (window.google && window.google.maps) {
+    // 如果已經有 google maps 就直接 resolve
+    if (window.google && window.google.maps && window.google.maps.places) {
       resolve();
       return;
     }
-    // const script = document.createElement("script");
-    // script.src = `https://maps.googleapis.com/maps/api/js?key=${
-    //   import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-    // }&libraries=places`;
-    // script.async = true;
-    // script.defer = true;
-    // script.onload = resolve;
-    // script.onerror = reject;
-    // document.head.appendChild(script);
+
     const loader = new Loader({
-      apiKey: import.meta.env,
+      apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+      version: "weekly",
+      libraries: ["places"],
     });
+
+    loader
+      .load()
+      .then(() => {
+        if (window.google && window.google.maps.places) {
+          resolve();
+        } else {
+          reject(new Error("Places library 沒載入成功"));
+        }
+      })
+      .catch((err) => {
+        console.error("Google Maps 載入失敗", err);
+        reject(err);
+      });
   });
 }
 
@@ -181,10 +191,44 @@ function loadNextPage() {
   }
 }
 
+// function findNearbyCafes(map, location) {
+//   if (!map || !location) return;
+
+//   const service = new google.maps.places.PlacesService(map);
+//   const request = {
+//     location: new google.maps.LatLng(location.lat, location.lng),
+//     radius: 500, // 公尺
+//     type: ["cafe"],
+//   };
+
+//   service.nearbySearch(request, (results, status) => {
+//     if (status === google.maps.places.PlacesServiceStatus.OK) {
+//       results.forEach((place) => {
+//         const marker = new google.maps.Marker({
+//           map,
+//           position: place.geometry.location,
+//           title: place.name,
+//         });
+
+//         const infoWindow = new google.maps.InfoWindow({
+//           content: `<strong>${place.name}</strong><br>${place.vicinity}`,
+//         });
+
+//         marker.addListener("click", () => {
+//           infoWindow.open(map, marker);
+//         });
+//       });
+//     } else {
+//       console.warn("找不到地點", status);
+//     }
+//   });
+// }
+
 onMounted(async () => {
   try {
     await loadGoogleMaps();
     initMap();
+    // findNearbyCafes(map.value, { lat: 25.033964, lng: 121.564472 });
   } catch (err) {
     alert("❌ Google Maps 載入失敗");
     console.error(err);
