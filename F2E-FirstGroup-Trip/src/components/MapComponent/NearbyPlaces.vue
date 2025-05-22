@@ -22,9 +22,9 @@ function loadNearbyPlaces(center) {
   const service = new google.maps.places.PlacesService(props.map);
 
   const request = {
-    location: new google.maps.LatLng(center.lat, center.lng),
+    location: props.location,
     radius: 2000,
-    type: "library", // 可以改成 library, cafe 等
+    type: "cafe", // 可以改成 library, cafe 等
   };
 
   service.nearbySearch(request, (results, status) => {
