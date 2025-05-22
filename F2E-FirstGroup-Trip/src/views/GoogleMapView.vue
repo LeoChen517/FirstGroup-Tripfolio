@@ -103,6 +103,8 @@ function searchPlace() {
   const service = new google.maps.places.PlacesService(map);
   const request = {
     query: searchQuery.value,
+    location: map.getCenter(),
+    radius: 5000, 
   };
 
   service.textSearch(request, (results, status) => {
