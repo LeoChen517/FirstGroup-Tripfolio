@@ -29,6 +29,7 @@
       <div v-if="place.photos && place.photos.length">
         <img
           :src="place.photos[0].getUrl({ maxWidth: 400 })"
+          @error="e => e.target.src = defaultImage"
           alt="地點圖片"
           style="margin-top: 10px; max-width: 100%; border-radius: 10px"
         />
@@ -51,6 +52,8 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import defaultImage from '@/assets/default-image.jpg'; // 預設圖片路徑
+
 
 const mapRef = ref(null);
 const searchQuery = ref("");
