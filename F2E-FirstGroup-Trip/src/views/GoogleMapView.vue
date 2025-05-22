@@ -294,12 +294,11 @@ onMounted(async () => {
   left: 0;
   z-index: 1000;
   background: white;
-  width: 100vw;
-  max-height: 90vh;
   padding: 10px;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  max-width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 10px;
   overflow-y: auto;
 }
