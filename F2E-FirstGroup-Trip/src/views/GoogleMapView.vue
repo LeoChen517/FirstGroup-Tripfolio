@@ -28,12 +28,15 @@
       <p :title="place.formatted_address">{{ place.formatted_address }}</p>
       <div v-if="place.photos && place.photos.length">
         <img
-    :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 1000 }) : defaultImage"
-    @error="e => e.target.src = defaultImage"
-    alt="地點圖片"
-    style="margin-top: 10px; max-width: 100%; border-radius: 10px"
-  />
-
+          :src="
+            place.photos && place.photos.length
+              ? place.photos[0].getUrl({ maxWidth: 1000 })
+              : defaultImage
+          "
+          @error="(e) => (e.target.src = defaultImage)"
+          alt="地點圖片"
+          style="margin-top: 10px; max-width: 100%; border-radius: 10px"
+        />
       </div>
       <!-- 如果沒有圖片，顯示預設圖片 -->
       <div v-else>
@@ -63,7 +66,7 @@ const isToggled = ref(false);
 const placeDetails = ref([]);
 const nextPageFunc = ref(null); // 儲存下一頁函式
 const hasMoreResults = ref(false); // 控制是否顯示按鈕
-const defaultImage= 'https://picsum.photos/1000?image'
+const defaultImage = "https://picsum.photos/1000?image";
 
 let map = null;
 let markers = [];
@@ -86,23 +89,26 @@ function loadGoogleMaps() {
     document.head.appendChild(script);
   });
 }
-
-// 初始化地圖
 function initMap() {
   map = new google.maps.Map(mapRef.value, {
     center: { lat: 25.033964, lng: 121.564472 },
     zoom: 15,
     mapTypeControl: false,
     zoomControl: false,
+    cameraControl: false,
+    scaleControl: false,
+    fullscreenControl: false,
+    errorControl: true,
     streetViewControl: false,
+    streetViewControlOptions: {
+      position: google.maps.ControlPosition.LEFT_TOP,
+    }, 
   });
   service = new google.maps.places.PlacesService(map);
 }
-
 function searchPlace() {
   if (!searchQuery.value || !map) return;
 
-  // 清除上次資料
   markers.forEach((marker) => marker.setMap(null));
   markers = [];
   placeDetails.value = [];
@@ -110,26 +116,21 @@ function searchPlace() {
   hasMoreResults.value = false;
 
   const request = {
-    location: map.getCenter(),  // 使用地圖中心點作為搜尋基準
-    radius: 5000, // 半徑設為 5000 米 (5 公里)
-    keyword: searchQuery.value,  // 使用關鍵字來篩選結果
+    location: map.getCenter(), 
+    radius: 5000, 
+    keyword: searchQuery.value, 
   };
-
   service.nearbySearch(request, handleResults);
 }
-
 function handleResults(results, status, pagination) {
   if (status !== google.maps.places.PlacesServiceStatus.OK || !results.length) {
     alert("找不到地點！");
     return;
   }
-
-  // 不清除舊的標記和資料，繼續顯示新的資料
   results.forEach((place) => {
     if (!place.geometry || !place.geometry.location) return;
 
-    // 在這裡將地圖中心設置為搜尋結果的第一個地點
-    map.setCenter(place.geometry.location);  // 設定地圖的中心位置
+    map.setCenter(place.geometry.location); 
 
     const marker = new google.maps.Marker({
       map,
@@ -155,7 +156,7 @@ function handleResults(results, status, pagination) {
 
     service.getDetails(detailRequest, (detailResult, detailStatus) => {
       if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-        placeDetails.value.push(detailResult);  // 不清空，直接新增結果
+        placeDetails.value.push(detailResult); // 不清空，直接新增結果
       }
     });
   });
@@ -168,12 +169,9 @@ function handleResults(results, status, pagination) {
     hasMoreResults.value = false;
   }
 }
-
-
-
 function loadNextPage() {
   if (nextPageFunc.value) {
-    nextPageFunc.value(); // Google 會自動再次調用 handleResults
+    nextPageFunc.value();
   }
 }
 
@@ -189,7 +187,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-*{
+* {
   font-family: "Noto Sans TC", sans-serif;
 }
 .map-container {
@@ -205,7 +203,7 @@ onMounted(async () => {
   z-index: 999;
   display: flex;
   align-items: center;
-  gap: 10px; /* 元素間距 */
+  gap: 10px;
   background-color: rgba(182, 176, 176, 0.9);
   padding: 10px;
   border-radius: 50px;
@@ -214,10 +212,9 @@ onMounted(async () => {
   position: relative;
   width: 300px;
 }
-
 .search-input {
   color: white;
-  padding: 8px 40px 8px 12px; /* 預留右側空間放按鈕 */
+  padding: 8px 40px 8px 12px;
   width: 100%;
   border-radius: 30px;
   border: none;
@@ -225,11 +222,9 @@ onMounted(async () => {
   background-color: rgba(129, 129, 129, 0.7);
   box-sizing: border-box;
 }
-
 .search-input::placeholder {
   color: white;
 }
-
 .search-btn {
   position: absolute;
   right: 10px;
@@ -241,7 +236,6 @@ onMounted(async () => {
   font-size: 18px;
   color: white;
 }
-
 /* Toggle Switch 樣式 */
 .toggle-switch {
   position: relative;
@@ -340,7 +334,6 @@ onMounted(async () => {
   text-align: center;
   margin-top: 10px;
 }
-
 .load-more-btn {
   background-color: #8f8f8f;
   color: white;
