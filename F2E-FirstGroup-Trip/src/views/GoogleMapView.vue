@@ -123,11 +123,7 @@ function handleResults(results, status, pagination) {
     return;
   }
 
-  // 清除舊的標記
-  markers.forEach((marker) => marker.setMap(null));
-  markers = [];
-  placeDetails.value = [];
-
+  // 不清除舊的標記和資料，繼續顯示新的資料
   results.forEach((place) => {
     if (!place.geometry || !place.geometry.location) return;
 
@@ -158,7 +154,7 @@ function handleResults(results, status, pagination) {
 
     service.getDetails(detailRequest, (detailResult, detailStatus) => {
       if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-        placeDetails.value.push(detailResult);
+        placeDetails.value.push(detailResult);  // 不清空，直接新增結果
       }
     });
   });
@@ -171,6 +167,7 @@ function handleResults(results, status, pagination) {
     hasMoreResults.value = false;
   }
 }
+
 
 
 function loadNextPage() {
