@@ -1,55 +1,67 @@
 <template>
-  <div class="search-container">
-    <div class="search-wrapper">
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke-width="1.5"
-    stroke="currentColor"
-    class="search-icon"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-    />
-  </svg>
-  <input
-    type="text"
-    v-model="searchQuery"
-    placeholder="輸入地點"
-    class="search-input"
-    ref="searchInput"
-    @keyup.enter="searchPlace"
-  />
-  <button @click.prevent="searchPlace" class="search-btn">搜尋</button>
-</div>
-    <label class="toggle-switch">
-      <input type="checkbox" v-model="isToggled" />
-      <span class="slider"></span>
+  <div class="absolute top-2.5 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-2.5 bg-gray-400/90 px-2.5 py-2.5 rounded-full">
+    <div class="relative w-[300px]">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+        />
+      </svg>
+      <input
+        type="text"
+        v-model="searchQuery"
+        placeholder="輸入地點"
+        class="w-full rounded-full border-none text-white bg-gray-600/70 px-10 py-2.5 box-border text-base placeholder-white"
+        ref="searchInput"
+        @keyup.enter="searchPlace"
+      />
+      <button @click.prevent="searchPlace"
+        class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-gray-400 px-2.5 py-1.5 rounded-full border-none cursor-pointer text-xs text-white">
+        搜尋
+      </button>
+    </div>
+
+    <!-- Toggle switch -->
+    <label class="relative inline-block w-20 h-8.5">
+      <input type="checkbox" v-model="isToggled" class="opacity-0 w-0 h-0" />
+      <span class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 transition duration-300 rounded-full">
+        <span class="absolute h-6 w-10 left-1.5 bottom-1.5 bg-white rounded-full flex items-center justify-center text-xs font-bold text-black transition duration-300"
+              :class="{ 'translate-x-7': isToggled }"
+              :style="{ content: isToggled ? `'卡片'` : `'地圖'` }"
+        >
+          {{ isToggled ? '卡片' : '地圖' }}
+        </span>
+      </span>
     </label>
   </div>
-  <div v-show="!isToggled" ref="mapRef" class="map-container"></div>
-  <div v-show="isToggled" v-if="placeDetails.length" class="info-panel">
-    <div v-for="(place, index) in placeDetails" :key="index" class="place-card">
-      <h2 :title="place.name">{{ place.name }}</h2>
-      <p :title="place.formatted_address">{{ place.formatted_address }}</p>
-      <p v-if="place.rating">
-        ⭐ {{ place.rating }}（共 {{ place.user_ratings_total }} 則評價）
-      </p>
+
+  <div v-show="!isToggled" ref="mapRef" class="w-screen h-screen m-0 p-0"></div>
+
+  <div v-show="isToggled" v-if="placeDetails.length" class="absolute top-20 left-0 z-[1000] bg-white p-2.5 box-border grid max-w-full grid-cols-[repeat(auto-fill,minmax(250px,max-content))] justify-start gap-2.5 overflow-y-auto">
+    <div v-for="(place, index) in placeDetails" :key="index" class="bg-gray-300 rounded-lg p-3 shadow-sm min-w-0 max-w-full">
+      <h2 :title="place.name" class="w-full text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis mb-2">{{ place.name }}</h2>
+      <p :title="place.formatted_address" class="w-full text-sm whitespace-nowrap overflow-hidden text-ellipsis mb-2">{{ place.formatted_address }}</p>
+      <p v-if="place.rating">⭐ {{ place.rating }}（共 {{ place.user_ratings_total }} 則評價）</p>
       <img
-        :src="
-          place.photos && place.photos.length
-            ? place.photos[0].getUrl({ maxWidth: 1000 })
-            : defaultImage"
+        :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 1000 }) : defaultImage"
         @error="(e) => (e.target.src = defaultImage)"
         alt="地點圖片"
-        style="margin-top: 10px; max-width: 100%; border-radius: 10px"
+        class="max-w-full aspect-[4/3] object-cover rounded-lg mt-2.5"
       />
     </div>
-    <div v-if="hasMoreResults" class="load-more-container">
-      <button class="load-more-btn" @click="loadNextPage">🔄 載入更多</button>
+
+    <div v-if="hasMoreResults" class="col-span-full text-center mt-2.5">
+      <button class="bg-gray-500 text-white py-2.5 px-5 rounded-full cursor-pointer text-lg w-1/2 hover:bg-gray-800" @click="loadNextPage">
+        🔄 載入更多
+      </button>
     </div>
   </div>
 </template>
@@ -69,6 +81,7 @@ let map = null;
 let markers = [];
 let service = null;
 
+// 載入 Google Maps API
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
     if (window.google && window.google.maps) {
@@ -86,6 +99,7 @@ function loadGoogleMaps() {
     document.head.appendChild(script);
   });
 }
+// 初始化地圖
 function initMap() {
   map = new google.maps.Map(mapRef.value, {
     center: { lat: 25.033964, lng: 121.564472 },
@@ -103,6 +117,7 @@ function initMap() {
   });
   service = new google.maps.places.PlacesService(map);
 }
+// 搜尋地點
 function searchPlace() {
   if (!searchQuery.value || !map) return;
 
@@ -119,6 +134,7 @@ function searchPlace() {
   };
   service.nearbySearch(request, handleResults);
 }
+// 處理搜尋結果
 function handleResults(results, status, pagination) {
   if (status !== google.maps.places.PlacesServiceStatus.OK || !results.length) {
     alert("找不到地點！");
@@ -208,6 +224,7 @@ function handleResults(results, status, pagination) {
     hasMoreResults.value = false;
   }
 }
+// 載入下一頁
 function loadNextPage() {
   if (nextPageFunc.value) {
     nextPageFunc.value();
@@ -222,7 +239,7 @@ onMounted(async () => {
     alert("❌ Google Maps 載入失敗");
     console.error(err);
   }
-  // 檢視卡片頁面用
+  // 檢視卡片頁面樣式
   // placeDetails.value = [
   //   {
   //     name: "星巴克台北101店",
@@ -238,83 +255,3 @@ onMounted(async () => {
   // ];
 });
 </script>
-
-<style scoped >
-.map-container {
-  @apply w-screen h-screen m-0 p-0;
-}
-.search-container {
-  @apply absolute top-2.5 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-2.5 
-         bg-gray-400/90 px-2.5 py-2.5 rounded-full;
-}
-.search-wrapper {
-  @apply relative w-[300px];
-}
-/* SVG icon 左邊 */
-.search-icon {
-  @apply absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none;
-}
-/* 搜尋按鈕在右邊 */
-.search-btn {
-  @apply absolute right-1.5 top-1/2 -translate-y-1/2 bg-gray-400 px-2.5 py-1.5 
-         rounded-full border-none cursor-pointer text-xs text-white;
-}
-/* 中間輸入框要留左右空間 */
-.search-input {
-  @apply w-full rounded-full border-none text-white bg-gray-600/70 
-         px-10 py-2.5 box-border text-base;
-}
-.search-input::placeholder {
-  @apply text-white;
-}
-/* Toggle Switch 樣式 */
-.toggle-switch {
-  @apply relative inline-block w-20 h-8.5;
-}
-
-.toggle-switch input {
-  @apply opacity-0 w-0 h-0;
-}
-.slider {
-  @apply absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 
-         transition duration-300 rounded-full;
-}
-.slider::before {
-  content: "地圖";
-  @apply absolute h-6 w-10 left-1.5 bottom-1.5 bg-white rounded-full 
-         flex items-center justify-center text-xs font-bold text-black 
-         transition duration-300;
-}
-.toggle-switch input:checked + .slider {
-  @apply bg-gray-400;
-}
-.toggle-switch input:checked + .slider::before {
-  @apply translate-x-7;
-  content: "卡片";
-}
-.info-panel {
-  @apply absolute top-20 left-0 z-[1000] bg-white p-2.5 box-border 
-         grid max-w-full grid-cols-[repeat(auto-fill,minmax(250px,max-content))] 
-         justify-start gap-2.5 overflow-y-auto;
-}
-.place-card {
-  @apply bg-gray-300 rounded-lg p-3 shadow-sm min-w-0 max-w-full;
-}
-.place-card img {
-  @apply max-w-full aspect-[4/3] object-cover rounded-lg mt-2.5;
-}
-.place-card h2 {
-  @apply w-full text-xl font-bold whitespace-nowrap overflow-hidden 
-         text-ellipsis mb-2;
-}
-.place-card p {
-  @apply w-full text-sm whitespace-nowrap overflow-hidden text-ellipsis mb-2;
-}
-.load-more-container {
-  @apply col-span-full text-center mt-2.5;
-}
-.load-more-btn {
-  @apply bg-gray-500 text-white py-2.5 px-5 rounded-full cursor-pointer 
-         text-lg w-1/2 hover:bg-gray-800;
-}
-</style> 
