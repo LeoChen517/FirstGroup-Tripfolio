@@ -58,8 +58,8 @@ const SingUp = async () => {
     }
 
     //帳號驗證(僅限英數，不允許特殊字元)
-    const isVaildUsername = /^[a-zA-Z0-9]+$/;
-    if (!isVaildUsername.test(username.value)) {
+    const isValidUsername = /^[a-zA-Z0-9]+$/;
+    if (!isValidUsername.test(username.value)) {
         Swal.fire({
             icon: 'error',
             title: '帳號格式錯誤',
@@ -112,7 +112,13 @@ const SingUp = async () => {
     // 建立完後端更改為新的URL
     try {
         await axios.post("https://todoo.5xcamp.us/users", newUser);
-        this.clearText();
+        const clearText = () => {
+            email.value = '';
+            username.value = '';
+            password.value = '';
+            phone.value = '';
+        };
+        clearText();
 
         await Swal.fire({
             icon: 'success',

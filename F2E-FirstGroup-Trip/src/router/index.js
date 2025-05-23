@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import SignUp from '../views/SignUp.vue'
 import Profile from '../views/Profile.vue'
+import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,7 +12,7 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/signup', // 註冊頁路徑
+      path: '/', // 註冊頁路徑
       name: 'SignUp',
       component: SignUp
     },
