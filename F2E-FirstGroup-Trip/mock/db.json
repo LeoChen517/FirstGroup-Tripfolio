@@ -1,0 +1,25 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "ttt@test.com",
+      "username": "xxx786",
+      "password": "abcde123456",
+      "phone": "0912345678"
+    },
+    {
+      "id": "423a",
+      "email": "333fdw@test.com",
+      "username": "egyfgi",
+      "password": "fefwe3333333",
+      "phone": "0912344555"
+    },
+    {
+      "id": "0cc9",
+      "email": "000yyyy@yahoo.com",
+      "username": "qqq123123",
+      "password": "a00001253628",
+      "phone": "0911111111"
+    }
+  ]
+}

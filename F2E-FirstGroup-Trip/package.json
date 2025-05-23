@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "serve-api": "json-server --watch mock/db.json --port 3000",
+    "reset-db": "copy /Y mock/reset.json mock/db.json",
     "build": "vite build",
     "preview": "vite preview"
   },

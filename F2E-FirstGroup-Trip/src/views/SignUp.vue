@@ -1,6 +1,6 @@
 <template>
     <h2>註冊頁面</h2>
-    <form class="signup-form" @submit.prevent="SingUp">
+    <form class="signup-form" @submit.prevent="signUp">
         <input v-model="email" type="email" placeholder="請輸入電子郵件" />
         <input v-model="username" type="text" placeholder="請輸入帳號" />
         <input v-model="password" type="password" placeholder="請輸入密碼" />
@@ -24,7 +24,8 @@ const router = useRouter()
 
 
 
-const SingUp = async () => {
+const signUp = async () => {
+    
     console.log(email.value, username.value, password.value, phone.value)
 
     if (!email.value || !username.value || !password.value || !phone.value) {
@@ -47,6 +48,9 @@ const SingUp = async () => {
         return;
     }
 
+    // 從 JSON Server 取得現有用戶
+    const { data: user } = await axios.get("http://localhost:3000/users")
+
     const existsEmail = user.find(user => user.email === email.value)
     if (existsEmail) {
         Swal.fire({
@@ -65,6 +69,7 @@ const SingUp = async () => {
             title: '帳號格式錯誤',
             text:'帳號名稱僅限英文字母與數字組成'
         })
+        return;
     }
 
     const existsUsername = user.find(user => user.username === username.value)
@@ -98,27 +103,31 @@ const SingUp = async () => {
         return;
     }
 
-    const newUser = {
-        user:{
-            id: Date.now(),
+    // const newUser = {
+    //     user:{
+    //         id: Date.now(),
+    //         email: email.value,
+    //         username: username.value,
+    //         password: password.value,
+    //         phone: phone.value
+    //     }
+    // }
+
+    // 使用 axios 發送 POST 請求
+    // 使用 JSON Server 模擬後端API
+    // 建立完後端更改為新的URL
+    try {
+        await axios.post("http://localhost:3000/users", {
             email: email.value,
             username: username.value,
             password: password.value,
             phone: phone.value
-        }
-    }
-
-    // 使用 axios 發送 POST 請求
-    // 建立完後端更改為新的URL
-    try {
-        await axios.post("https://todoo.5xcamp.us/users", newUser);
-        const clearText = () => {
-            email.value = '';
-            username.value = '';
-            password.value = '';
-            phone.value = '';
-        };
-        clearText();
+        });
+        // 清空輸入欄位
+        email.value = ''
+        username.value = ''
+        password.value = ''
+        phone.value = ''
 
         await Swal.fire({
             icon: 'success',
