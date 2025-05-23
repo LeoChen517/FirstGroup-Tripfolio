@@ -203,6 +203,50 @@ function initMap() {
     },
   });
   service = new google.maps.places.PlacesService(map);
+  // 取得地圖上景點的詳細資料
+  map.addListener("click", function (event) {
+  if (event.placeId) {
+    event.stop();
+
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
+
+    const placeId = event.placeId;
+
+    const detailRequest = {
+      placeId,
+      fields: [
+        "name",
+        "formatted_address",
+        "geometry",
+        "rating",
+        "user_ratings_total",
+        "photos",
+        "business_status",
+        "icon",
+      ],
+    };
+
+    service.getDetails(detailRequest, (detailResult, detailStatus) => {
+      if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
+        selectedPlace.value = detailResult;
+
+        const marker = new google.maps.Marker({
+          position: detailResult.geometry.location,
+          map: map,
+          title: detailResult.name,
+        });
+        markers.push(marker);
+        if (!placeDetails.value.some((p) => p.place_id === detailResult.place_id)) {
+          placeDetails.value.push(detailResult);
+        }
+      } else {
+        console.warn("取得詳細資料失敗", detailStatus);
+      }
+    });
+  }
+});
+
 }
 // 搜尋地點
 function searchPlace() {
