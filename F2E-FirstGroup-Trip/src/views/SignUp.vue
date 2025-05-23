@@ -1,6 +1,6 @@
 <template>
     <h2>註冊頁面</h2>
-    <form @submit.prevent="SingUp">
+    <form class="signup-form" @submit.prevent="SingUp">
         <input v-model="email" type="email" placeholder="請輸入電子郵件" />
         <input v-model="username" type="text" placeholder="請輸入帳號" />
         <input v-model="password" type="password" placeholder="請輸入密碼" />
@@ -36,6 +36,17 @@ const SingUp = async () => {
         return;
     }
 
+    // 電子郵件驗證(僅限英數+ @ 與 .) 
+    const isValidEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!isValidEmail.test(email.value)) {
+        Swal.fire({
+            icon: 'error',
+            title: '電子郵件格式錯誤',
+            text: '請輸入正確的電子郵件格式(僅限英數字母)'
+        });
+        return;
+    }
+
     const existsEmail = user.find(user => user.email === email.value)
     if (existsEmail) {
         Swal.fire({
@@ -45,6 +56,17 @@ const SingUp = async () => {
         })
         return;
     }
+
+    //帳號驗證(僅限英數，不允許特殊字元)
+    const isVaildUsername = /^[a-zA-Z0-9]+$/;
+    if (!isVaildUsername.test(username.value)) {
+        Swal.fire({
+            icon: 'error',
+            title: '帳號格式錯誤',
+            text:'帳號名稱僅限英文字母與數字組成'
+        })
+    }
+
     const existsUsername = user.find(user => user.username === username.value)
     if (existsUsername) {
         Swal.fire({
@@ -114,3 +136,34 @@ const SingUp = async () => {
 }
 
 </script>
+
+<style scoped>
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 300px;
+    margin: auto;
+}
+
+.signup-form input {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 4px;   
+}
+
+.signup-form button {
+    padding: 10px;
+    background-color: #6a5acd;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.signup-form button:hover {
+    background-color: #483d8b;
+}
+</style>
+
