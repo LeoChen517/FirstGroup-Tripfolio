@@ -1,55 +1,52 @@
 <template>
   <div class="search-container">
     <div class="search-wrapper">
-      <input
-        type="text"
-        v-model="searchQuery"
-        placeholder="搜尋地點"
-        class="search-input"
-        ref="searchInput"
-        @keyup.enter="searchPlace"
-      />
-      <button @click.prevent="searchPlace" class="search-btn">🔍</button>
-    </div>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
+    stroke="currentColor"
+    class="search-icon"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+    />
+  </svg>
+  <input
+    type="text"
+    v-model="searchQuery"
+    placeholder="輸入地點"
+    class="search-input"
+    ref="searchInput"
+    @keyup.enter="searchPlace"
+  />
+  <button @click.prevent="searchPlace" class="search-btn">搜尋</button>
+</div>
     <label class="toggle-switch">
       <input type="checkbox" v-model="isToggled" />
       <span class="slider"></span>
     </label>
   </div>
-  <div
-    v-show="!isToggled"
-    ref="mapRef"
-    class="map-container"
-    style="width: 100vw; height: 100vh"
-  ></div>
+  <div v-show="!isToggled" ref="mapRef" class="map-container"></div>
   <div v-show="isToggled" v-if="placeDetails.length" class="info-panel">
     <div v-for="(place, index) in placeDetails" :key="index" class="place-card">
       <h2 :title="place.name">{{ place.name }}</h2>
       <p :title="place.formatted_address">{{ place.formatted_address }}</p>
-      <div v-if="place.photos && place.photos.length">
-        <img
-          :src="
-            place.photos && place.photos.length
-              ? place.photos[0].getUrl({ maxWidth: 1000 })
-              : defaultImage
-          "
-          @error="(e) => (e.target.src = defaultImage)"
-          alt="地點圖片"
-          style="margin-top: 10px; max-width: 100%; border-radius: 10px"
-        />
-      </div>
-      <!-- 如果沒有圖片，顯示預設圖片 -->
-      <div v-else>
-        <img
-          :src="defaultImage"
-          alt="預設圖片"
-          style="margin-top: 10px; max-width: 100%; border-radius: 10px"
-        />
-      </div>
-
       <p v-if="place.rating">
         ⭐ {{ place.rating }}（共 {{ place.user_ratings_total }} 則評價）
       </p>
+      <img
+        :src="
+          place.photos && place.photos.length
+            ? place.photos[0].getUrl({ maxWidth: 1000 })
+            : defaultImage"
+        @error="(e) => (e.target.src = defaultImage)"
+        alt="地點圖片"
+        style="margin-top: 10px; max-width: 100%; border-radius: 10px"
+      />
     </div>
     <div v-if="hasMoreResults" class="load-more-container">
       <button class="load-more-btn" @click="loadNextPage">🔄 載入更多</button>
@@ -57,15 +54,15 @@
   </div>
 </template>
 
-<script setup>
+<script setup >
 import { ref, onMounted } from "vue";
 
 const mapRef = ref(null);
 const searchQuery = ref("");
 const isToggled = ref(false);
 const placeDetails = ref([]);
-const nextPageFunc = ref(null); // 儲存下一頁函式
-const hasMoreResults = ref(false); // 控制是否顯示按鈕
+const nextPageFunc = ref(null);
+const hasMoreResults = ref(false);
 const defaultImage = "https://picsum.photos/1000?image";
 
 let map = null;
@@ -102,7 +99,7 @@ function initMap() {
     streetViewControl: false,
     streetViewControlOptions: {
       position: google.maps.ControlPosition.LEFT_TOP,
-    }, 
+    },
   });
   service = new google.maps.places.PlacesService(map);
 }
@@ -116,9 +113,9 @@ function searchPlace() {
   hasMoreResults.value = false;
 
   const request = {
-    location: map.getCenter(), 
-    radius: 5000, 
-    keyword: searchQuery.value, 
+    location: map.getCenter(),
+    radius: 5000,
+    keyword: searchQuery.value,
   };
   service.nearbySearch(request, handleResults);
 }
@@ -130,7 +127,7 @@ function handleResults(results, status, pagination) {
   results.forEach((place) => {
     if (!place.geometry || !place.geometry.location) return;
 
-    map.setCenter(place.geometry.location); 
+    map.setCenter(place.geometry.location);
 
     const marker = new google.maps.Marker({
       map,
@@ -145,12 +142,54 @@ function handleResults(results, status, pagination) {
       fields: [
         "name",
         "formatted_address",
-        "formatted_phone_number",
-        "opening_hours",
-        "photos",
+        "geometry",
+        // "types",
         "rating",
-        "user_ratings_total",
-        "website",
+        // "user_ratings_total",
+        // "formatted_phone_number",
+        // "international_phone_number",
+        // "opening_hours",
+        // "current_opening_hours",
+        // "secondary_opening_hours",
+        "photos",
+        // "reviews",
+        // "price_level",
+        // "website",
+        // "url", //開啟 Google 地圖
+        // "vicinity", //附近描述（適用於搜尋 API，如 "near Taipei 101"）
+        // "address_components",
+        // "adr_address",
+        // "postal_address",
+        // "short_formatted_address",
+        "business_status",
+        // "plus_code",
+        // "editorial_summary",
+        "icon", // =icon_mask_base_uri + icon_background_color
+        // "icon_background_color",
+        // "icon_mask_base_uri",
+        // "utc_offset", // 當地時間與 UTC 的時差（分鐘）
+        // "curbside_pickup", // 是否提供路邊取貨
+        // "delivery", // 是否提供外送
+        // "dine_in", // 是否提供內用
+        // "takeout", // 是否提供外帶
+        // "reservable", // 是否可預約
+        // "serves_beer", // 是否供應啤酒
+        // "serves_breakfast", // 是否供應早餐
+        // "serves_brunch", // 是否供應早午餐
+        // "serves_dinner", // 是否供應晚餐
+        // "serves_lunch", // 是否供應午餐
+        // "serves_vegetarian_food", // 是否供應素食
+        // "serves_wine", // 是否供應葡萄酒
+        // "good_for_children", // 是否適合兒童
+        // "good_for_groups", // 是否適合團體聚會
+        // "live_music", // 是否有現場音樂
+        // "menu_for_children", // 是否有兒童菜單
+        // "outdoor_seating", // 是否有戶外座位
+        // "restroom", // 是否有洗手間
+        // "parking_options", // 停車選項資訊（例如是否提供停車場、代客泊車等）
+        // "payment_options", // 支付方式資訊（如信用卡、行動支付等）
+        // "google_maps_links", // 指向 Google 地圖的頁面連結（URL）
+        // "google_maps_uri", // Google Maps 的深層連結 URI（通常用於行動裝置跳轉）
       ],
     };
 
@@ -183,168 +222,99 @@ onMounted(async () => {
     alert("❌ Google Maps 載入失敗");
     console.error(err);
   }
+  // 檢視卡片頁面用
+  // placeDetails.value = [
+  //   {
+  //     name: "星巴克台北101店",
+  //     formatted_address: "台北市信義區信義路五段7號",
+  //     photos: [
+  //       {
+  //         getUrl: ({ maxWidth }) => `https://picsum.photos/${maxWidth}/600?random=1`,
+  //       },
+  //     ],
+  //     rating: 4.3,
+  //     user_ratings_total: 152,
+  //   }
+  // ];
 });
 </script>
 
-<style scoped>
-* {
-  font-family: "Noto Sans TC", sans-serif;
-}
+<style scoped >
 .map-container {
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
+  @apply w-screen h-screen m-0 p-0;
 }
 .search-container {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background-color: rgba(182, 176, 176, 0.9);
-  padding: 10px;
-  border-radius: 50px;
+  @apply absolute top-2.5 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-2.5 
+         bg-gray-400/90 px-2.5 py-2.5 rounded-full;
 }
 .search-wrapper {
-  position: relative;
-  width: 300px;
+  @apply relative w-[300px];
 }
+/* SVG icon 左邊 */
+.search-icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none;
+}
+/* 搜尋按鈕在右邊 */
+.search-btn {
+  @apply absolute right-1.5 top-1/2 -translate-y-1/2 bg-gray-400 px-2.5 py-1.5 
+         rounded-full border-none cursor-pointer text-xs text-white;
+}
+/* 中間輸入框要留左右空間 */
 .search-input {
-  color: white;
-  padding: 8px 40px 8px 12px;
-  width: 100%;
-  border-radius: 30px;
-  border: none;
-  font-size: 16px;
-  background-color: rgba(129, 129, 129, 0.7);
-  box-sizing: border-box;
+  @apply w-full rounded-full border-none text-white bg-gray-600/70 
+         px-10 py-2.5 box-border text-base;
 }
 .search-input::placeholder {
-  color: white;
-}
-.search-btn {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: white;
+  @apply text-white;
 }
 /* Toggle Switch 樣式 */
 .toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 80px;
-  height: 34px;
+  @apply relative inline-block w-20 h-8.5;
 }
+
 .toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+  @apply opacity-0 w-0 h-0;
 }
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.3s;
-  border-radius: 30px;
+  @apply absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 
+         transition duration-300 rounded-full;
 }
 .slider::before {
-  position: absolute;
   content: "地圖";
-  height: 28px;
-  width: 50px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  color: black;
+  @apply absolute h-6 w-10 left-1.5 bottom-1.5 bg-white rounded-full 
+         flex items-center justify-center text-xs font-bold text-black 
+         transition duration-300;
 }
 .toggle-switch input:checked + .slider {
-  background-color: rgb(138, 134, 134);
+  @apply bg-gray-400;
 }
 .toggle-switch input:checked + .slider::before {
-  transform: translateX(24px);
+  @apply translate-x-7;
   content: "卡片";
 }
 .info-panel {
-  position: absolute;
-  top: 80px;
-  left: 0;
-  z-index: 1000;
-  background: white;
-  padding: 10px;
-  box-sizing: border-box;
-  display: grid;
-  max-width: 100%;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 10px;
-  overflow-y: auto;
+  @apply absolute top-20 left-0 z-[1000] bg-white p-2.5 box-border 
+         grid max-w-full grid-cols-[repeat(auto-fill,minmax(250px,max-content))] 
+         justify-start gap-2.5 overflow-y-auto;
 }
 .place-card {
-  background-color: #e2e2e2;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
-  min-width: 0;
-  max-width: 100%;
+  @apply bg-gray-300 rounded-lg p-3 shadow-sm min-w-0 max-w-full;
 }
 .place-card img {
-  max-width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-top: 10px;
+  @apply max-w-full aspect-[4/3] object-cover rounded-lg mt-2.5;
 }
 .place-card h2 {
-  width: 100%;
-  font-size: 24px;
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 8px;
+  @apply w-full text-xl font-bold whitespace-nowrap overflow-hidden 
+         text-ellipsis mb-2;
 }
 .place-card p {
-  width: 100%;
-  font-size: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 8px;
+  @apply w-full text-sm whitespace-nowrap overflow-hidden text-ellipsis mb-2;
 }
 .load-more-container {
-  grid-column: 1 / -1;
-  text-align: center;
-  margin-top: 10px;
+  @apply col-span-full text-center mt-2.5;
 }
 .load-more-btn {
-  background-color: #8f8f8f;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 16px;
-  width: 50%;
+  @apply bg-gray-500 text-white py-2.5 px-5 rounded-full cursor-pointer 
+         text-lg w-1/2 hover:bg-gray-800;
 }
-.load-more-btn:hover {
-  background-color: #3a3a3a;
-}
-</style>
+</style> 
