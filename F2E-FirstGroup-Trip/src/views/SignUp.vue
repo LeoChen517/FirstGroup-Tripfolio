@@ -103,15 +103,15 @@ const signUp = async () => {
         return;
     }
 
-    // const newUser = {
-    //     user:{
-    //         id: Date.now(),
-    //         email: email.value,
-    //         username: username.value,
-    //         password: password.value,
-    //         phone: phone.value
-    //     }
-    // }
+    const newUser = {
+        user:{
+            id: Date.now(),
+            email: email.value,
+            username: username.value,
+            password: password.value,
+            phone: phone.value
+        }
+    }
 
     // 使用 axios 發送 POST 請求
     // 使用 JSON Server 模擬後端API
