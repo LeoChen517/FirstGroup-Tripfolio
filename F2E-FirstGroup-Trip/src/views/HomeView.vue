@@ -1,7 +1,9 @@
 <script setup></script>
 
 <template>
-  <main>this is homeView</main>
+
+  <main>homepage</main>
+
 </template>
 
 <style scoped></style>
