@@ -1,10 +1,9 @@
 <script setup>
-import { RouterLink, RouterView } from "vue-router";
-import HelloWorld from "./components/HelloWorld.vue";
+import NotificationSettings from "./views/NotificationSettings.vue";
 </script>
 
 <template>
-  <RouterView />
+  <NotificationSettings />
 </template>
 
-<style scoped></style>
+<style></style>
