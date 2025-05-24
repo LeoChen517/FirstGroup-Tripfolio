@@ -1,9 +1,5 @@
-<script setup>
-import NotificationSettings from "./views/NotificationSettings.vue";
-</script>
+<script setup></script>
 
-<template>
-  <NotificationSettings />
-</template>
+<template></template>
 
 <style></style>
