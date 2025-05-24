@@ -1,17 +1,16 @@
-import express from 'express'
-import cors from 'cors'
-import authRoutes from './routes/authRoutes.js'
-import dotenv from 'dotenv'
+const express = require("express");
+const cors = require("cors");
+const authRoutes = require("./routes/authRoutes");
 
-dotenv.config()
+require("dotenv").config();
 
-const app = express()
-const PORT = process.env.PORT || 3000
+const app = express();
 
-app.use(cors())
-app.use(express.json())
-app.use('/api', authRoutes)
+app.use(cors());
+app.use(express.json());
 
-app.listen(PORT, () => {
-    console.log(`伺服器啟動於 http://localhost:${PORT}`)
-})
+app.use("/api", authRoutes);
+
+app.listen(3000, () => {
+	console.log("✅ Server running on http://localhost:3000");
+});

@@ -64,7 +64,8 @@
 	}
   
     try {
-      const res = await axios.post('http://localhost:3000/api/auth/login', userData)
+      const res = await axios.post('http://localhost:3000/api/login'
+, userData)
       const token = res.data.token
       localStorage.setItem(TOKEN_NAME, token)
       isLoggedIn.value = true
@@ -81,11 +82,11 @@
     const token = localStorage.getItem(TOKEN_NAME)
     if (!token) return
   
-    finally {
-      localStorage.removeItem(TOKEN_NAME)
-      isLoggedIn.value = false
-      clearText()
-    }
+
+    localStorage.removeItem(TOKEN_NAME)
+    isLoggedIn.value = false
+    clearText()
+    
   }
   
   onMounted(() => {
