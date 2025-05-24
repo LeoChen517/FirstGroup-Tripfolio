@@ -8,7 +8,6 @@
       <select v-model="travelMode" @change="recalculateRoute">
       <option value="DRIVING">🚗 開車</option>
       <option value="WALKING">🚶‍♀️ 步行</option>
-      <option value="BICYCLING">🚴‍♂️ 腳踏車</option>
       <option value="TRANSIT">🚇 大眾運輸</option>
       </select>
     </label>
@@ -39,12 +38,11 @@
       <p :title="place.formatted_address">{{ place.formatted_address }}</p>
       <div v-if="place.photos && place.photos.length">
         <img
-    :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 1000 }) : defaultImage"
-    @error="e => e.target.src = defaultImage"
-    alt="地點圖片"
-    style="margin-top: 10px; max-width: 100%; border-radius: 10px"
-  />
-
+        :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 1000 }) : defaultImage"
+        @error="e => e.target.src = defaultImage"
+        alt="地點圖片"
+        style="margin-top: 10px; max-width: 100%; border-radius: 10px"
+      />
       </div>
       <!-- 如果沒有圖片，顯示預設圖片 -->
       <div v-else>
@@ -254,6 +252,7 @@ onMounted(async () => {
     console.error(err);
   }
 });
+
 </script>
 
 
