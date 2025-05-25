@@ -1,8 +1,7 @@
 <template>
     <main class="container py-5">
       <h1 class="mb-4">登入頁面</h1>
-  
-      <!-- 錯誤訊息提示 -->
+
       <div v-if="showError" class="alert alert-danger d-flex align-items-center" role="alert">
         <svg xmlns="http://www.w3.org/2000/svg" class="bi flex-shrink-0 me-2" viewBox="0 0 16 16" role="img" aria-label="Warning:" width="20">
           <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 
@@ -11,7 +10,7 @@
         <div class="ms-2">{{ errorMessage }}</div>
       </div>
   
-      <!-- 登入表單 -->
+
       <form v-if="!isLoggedIn" @submit.prevent="login">
         <div class="mb-3">
           <label for="email" class="form-label">Email</label>
@@ -26,8 +25,7 @@
         <button type="submit" class="btn btn-primary">登入</button>
         <button type="submit" class="btn btn-primary">註冊</button>
       </form>
-  
-      <!-- 登出按鈕 -->
+
       <div v-if="isLoggedIn">
         <p class="text-success">您已登入</p>
         <button class="btn btn-danger" @click="logout">登出</button>
