@@ -1,4 +1,18 @@
 <template>
+  <div class="controls">
+    <div v-if="result">
+      <p>兩點距離：{{ result.distance }}，預估時間：{{ result.duration }}</p>
+    </div>
+  
+    <label>選擇交通方式：
+      <select v-model="travelMode" @change="recalculateRoute">
+      <option value="DRIVING">🚗 開車</option>
+      <option value="WALKING">🚶‍♀️ 步行</option>
+      <option value="TRANSIT">🚇 大眾運輸</option>
+      </select>
+    </label>
+  </div>
+
   <div class="search-container">
     <div class="search-wrapper">
       <input
@@ -16,24 +30,19 @@
       <span class="slider"></span>
     </label>
   </div>
-  <div
-    v-show="!isToggled"
-    ref="mapRef"
-    class="map-container"
-    style="width: 100vw; height: 100vh"
-  ></div>
+  
+  <div ref="mapRef" class="map-container" :style="{ display: isToggled ? 'none' : 'block' }" />
   <div v-show="isToggled" v-if="placeDetails.length" class="info-panel">
     <div v-for="(place, index) in placeDetails" :key="index" class="place-card">
       <h2 :title="place.name">{{ place.name }}</h2>
       <p :title="place.formatted_address">{{ place.formatted_address }}</p>
       <div v-if="place.photos && place.photos.length">
         <img
-    :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 1000 }) : defaultImage"
-    @error="e => e.target.src = defaultImage"
-    alt="地點圖片"
-    style="margin-top: 10px; max-width: 100%; border-radius: 10px"
-  />
-
+        :src="place.photos && place.photos.length ? place.photos[0].getUrl({ maxWidth: 1000 }) : defaultImage"
+        @error="e => e.target.src = defaultImage"
+        alt="地點圖片"
+        style="margin-top: 10px; max-width: 100%; border-radius: 10px"
+      />
       </div>
       <!-- 如果沒有圖片，顯示預設圖片 -->
       <div v-else>
@@ -57,16 +66,23 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
+// 公用狀態
 const mapRef = ref(null);
+let map = null;
+let markers = [];
+
+// 路線規劃
+const result = ref(null);
+const travelMode = ref("DRIVING");
+let directionsService, directionsRenderer;
+
+// 地點搜尋
 const searchQuery = ref("");
 const isToggled = ref(false);
 const placeDetails = ref([]);
-const nextPageFunc = ref(null); // 儲存下一頁函式
-const hasMoreResults = ref(false); // 控制是否顯示按鈕
-const defaultImage= 'https://picsum.photos/1000?image'
-
-let map = null;
-let markers = [];
+const nextPageFunc = ref(null);
+const hasMoreResults = ref(false);
+const defaultImage = 'https://picsum.photos/1000?image';
 let service = null;
 
 function loadGoogleMaps() {
@@ -76,9 +92,7 @@ function loadGoogleMaps() {
       return;
     }
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${
-      import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-    }&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.async = true;
     script.defer = true;
     script.onload = resolve;
@@ -87,22 +101,31 @@ function loadGoogleMaps() {
   });
 }
 
-// 初始化地圖
-function initMap() {
-  map = new google.maps.Map(mapRef.value, {
-    center: { lat: 25.033964, lng: 121.564472 },
-    zoom: 15,
-    mapTypeControl: false,
-    zoomControl: false,
-    streetViewControl: false,
-  });
-  service = new google.maps.places.PlacesService(map);
+function calculateRoute(origin, destination) {
+  directionsService.route(
+    {
+      origin,
+      destination,
+      travelMode: travelMode.value,
+    },
+    (response, status) => {
+      if (status === "OK") {
+        directionsRenderer.setDirections(response);
+        const leg = response.routes[0].legs[0];
+        result.value = {
+          distance: leg.distance.text,
+          duration: leg.duration.text,
+        };
+      } else {
+        alert("路線規劃失敗：" + status);
+      }
+    }
+  );
 }
 
 function searchPlace() {
   if (!searchQuery.value || !map) return;
 
-  // 清除上次資料
   markers.forEach((marker) => marker.setMap(null));
   markers = [];
   placeDetails.value = [];
@@ -110,9 +133,9 @@ function searchPlace() {
   hasMoreResults.value = false;
 
   const request = {
-    location: map.getCenter(),  // 使用地圖中心點作為搜尋基準
-    radius: 5000, // 半徑設為 5000 米 (5 公里)
-    keyword: searchQuery.value,  // 使用關鍵字來篩選結果
+    location: map.getCenter(),
+    radius: 5000,
+    keyword: searchQuery.value,
   };
 
   service.nearbySearch(request, handleResults);
@@ -124,12 +147,10 @@ function handleResults(results, status, pagination) {
     return;
   }
 
-  // 不清除舊的標記和資料，繼續顯示新的資料
   results.forEach((place) => {
     if (!place.geometry || !place.geometry.location) return;
 
-    // 在這裡將地圖中心設置為搜尋結果的第一個地點
-    map.setCenter(place.geometry.location);  // 設定地圖的中心位置
+    map.setCenter(place.geometry.location);
 
     const marker = new google.maps.Marker({
       map,
@@ -155,12 +176,11 @@ function handleResults(results, status, pagination) {
 
     service.getDetails(detailRequest, (detailResult, detailStatus) => {
       if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-        placeDetails.value.push(detailResult);  // 不清空，直接新增結果
+        placeDetails.value.push(detailResult);
       }
     });
   });
 
-  // 分頁處理
   if (pagination && pagination.hasNextPage) {
     nextPageFunc.value = () => pagination.nextPage();
     hasMoreResults.value = true;
@@ -169,35 +189,101 @@ function handleResults(results, status, pagination) {
   }
 }
 
-
-
 function loadNextPage() {
   if (nextPageFunc.value) {
-    nextPageFunc.value(); // Google 會自動再次調用 handleResults
+    nextPageFunc.value();
+  }
+}
+
+function reset() {
+  result.value = null;
+  placeDetails.value = [];
+  markers.forEach((marker) => marker.setMap(null));
+  markers = [];
+  if (directionsRenderer) {
+    directionsRenderer.setDirections({ routes: [] });
+  }
+}
+
+function recalculateRoute() {
+  if (isToggled.value) return; 
+  if (markers.length === 2) {
+    calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
 }
 
 onMounted(async () => {
   try {
     await loadGoogleMaps();
-    initMap();
+
+    map = new google.maps.Map(mapRef.value, {
+      center: { lat: 25.033964, lng: 121.564472 },
+      zoom: 15,
+      mapTypeControl: false,
+      zoomControl: false,
+      streetViewControl: false,
+    });
+
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+    directionsRenderer.setMap(map);
+
+    service = new google.maps.places.PlacesService(map);
+
+    map.addListener("click", (e) => {
+      if (isToggled.value) return;
+      if (markers.length >= 2) reset();
+
+      const marker = new google.maps.Marker({
+        position: e.latLng,
+        map,
+      });
+
+      markers.push(marker);
+
+      if (markers.length === 2) {
+        const origin = markers[0].getPosition();
+        const destination = markers[1].getPosition();
+        calculateRoute(origin, destination);
+      }
+    });
   } catch (err) {
     alert("❌ Google Maps 載入失敗");
     console.error(err);
   }
 });
+
 </script>
+
+
 
 <style scoped>
 *{
   font-family: "Noto Sans TC", sans-serif;
 }
+
 .map-container {
   width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 0;
+  position: relative;
 }
+
+.controls {
+  position: absolute;
+  bottom: 40px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 1;
+}
+
 .search-container {
   position: absolute;
   top: 10px;
