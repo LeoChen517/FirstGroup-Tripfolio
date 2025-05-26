@@ -150,6 +150,24 @@
       </div>
     </div>
   </div>
+  <!-- <div class="left-sidebar">
+    <button @click="showSelectBar">select-bar</button>
+    <button @click="showHome">home</button>
+    <button @click="restaurant">restaurant</button>
+    <button @click="hotel">hotel</button>
+  </div> -->
+  <aside
+    class="w-20 p-4 space-y-2 bg-gray-400/90 absolute left-4 top-1/2 translate-y-[-50%] rounded-full"
+  >
+    <button
+      v-for="item in categories"
+      :key="item.type"
+      @click="searchByCategory(item.type)"
+      class="block w-full text-left px-3 py-2 rounded hover:bg-blue-100"
+    >
+      {{ item.label }}
+    </button>
+  </aside>
   <div class="controls">
     <div v-if="result">
       <p>兩點距離：{{ result.distance }}，預估時間：{{ result.duration }}</p>
@@ -354,6 +372,30 @@ function recalculateRoute() {
   if (markers.length === 2) {
     calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
+}
+const categories = [
+  { type: "restaurant", label: "🍽️" },
+  { type: "lodging", label: "🏨" },
+  { type: "residence", label: "🏠" },
+  { type: "tourist_attraction", label: "📍" },
+  { type: "other_options", label: "+" },
+];
+//篩選景點
+function searchByCategory(type) {
+  if (!map || !type) return;
+
+  // 清除舊有 marker
+  markers.forEach((m) => m.setMap(null));
+  markers = [];
+
+  const service = new window.google.maps.places.PlacesService(map);
+  const request = {
+    location: map.getCenter(),
+    radius: 1000,
+    type,
+  };
+
+  service.nearbySearch(request, handleResults);
 }
 
 onMounted(async () => {
