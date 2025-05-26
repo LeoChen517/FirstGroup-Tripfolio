@@ -32,7 +32,6 @@
         搜尋
       </button>
     </div>
-
     <!-- Toggle switch -->
     <label class="relative inline-block w-20 h-8.5">
       <input type="checkbox" v-model="isToggled" class="opacity-0 w-0 h-0" />
@@ -49,9 +48,7 @@
       </span>
     </label>
   </div>
-
   <div v-show="!isToggled" ref="mapRef" class="w-screen h-screen m-0 p-0"></div>
-
   <div
     v-show="isToggled"
     v-if="placeDetails.length"
@@ -91,7 +88,6 @@
       </button>
     </div>
   </div>
-  
   <!--地點詳細資訊 -->
   <div
     v-if="selectedPlace"
@@ -110,12 +106,17 @@
         {{ selectedPlace.formatted_address }}
       </p>
       <p v-if="selectedPlace.rating" class="text-yellow-600 mb-3">
-        ⭐ {{ selectedPlace.rating }}（共 {{ selectedPlace.user_ratings_total }} 則評價）
+        ⭐ {{ selectedPlace.rating }}（共
+        {{ selectedPlace.user_ratings_total }} 則評價）
       </p>
       <div class="relative w-full aspect-[4/3]">
         <button
           v-if="selectedPlace.photos && selectedPlace.photos.length > 1"
-          @click.stop="selectedPlacePhotoIndex = (selectedPlacePhotoIndex - 1 + selectedPlace.photos.length) % selectedPlace.photos.length"
+          @click.stop="
+            selectedPlacePhotoIndex =
+              (selectedPlacePhotoIndex - 1 + selectedPlace.photos.length) %
+              selectedPlace.photos.length
+          "
           class="absolute top-1/2 left-2 -translate-y-1/2 bg-black bg-opacity-40 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-700"
           aria-label="上一張圖片"
         >
@@ -124,16 +125,23 @@
 
         <!-- 圖片 -->
         <img
-          :src="selectedPlace.photos && selectedPlace.photos.length
-            ? selectedPlace.photos[selectedPlacePhotoIndex].getUrl({ maxWidth: 800 })
-            : defaultImage"
+          :src="
+            selectedPlace.photos && selectedPlace.photos.length
+              ? selectedPlace.photos[selectedPlacePhotoIndex].getUrl({
+                  maxWidth: 800,
+                })
+              : defaultImage
+          "
           @error="(e) => (e.target.src = defaultImage)"
           alt="地點圖片"
           class="max-w-full aspect-[4/3] object-cover rounded-lg mt-2.5"
         />
         <button
           v-if="selectedPlace.photos && selectedPlace.photos.length > 1"
-          @click.stop="selectedPlacePhotoIndex = (selectedPlacePhotoIndex + 1) % selectedPlace.photos.length"
+          @click.stop="
+            selectedPlacePhotoIndex =
+              (selectedPlacePhotoIndex + 1) % selectedPlace.photos.length
+          "
           class="absolute top-1/2 right-2 -translate-y-1/2 bg-black bg-opacity-40 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-700"
           aria-label="下一張圖片"
         >
@@ -142,12 +150,33 @@
       </div>
     </div>
   </div>
+  <div class="controls">
+    <div v-if="result">
+      <p>兩點距離：{{ result.distance }}，預估時間：{{ result.duration }}</p>
+    </div>
+    <label
+      >選擇交通方式：
+      <select v-model="travelMode" @change="recalculateRoute">
+        <option value="DRIVING">🚗 開車</option>
+        <option value="WALKING">🚶‍♀️ 步行</option>
+        <option value="TRANSIT">🚇 大眾運輸</option>
+      </select>
+    </label>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
 
 const mapRef = ref(null);
+let map = null;
+let markers = [];
+let service = null;
+
+const result = ref(null);
+const travelMode = ref("DRIVING");
+let directionsService, directionsRenderer;
+
 const searchQuery = ref("");
 const isToggled = ref(false);
 const placeDetails = ref([]);
@@ -156,12 +185,9 @@ const hasMoreResults = ref(false);
 const defaultImage = "https://picsum.photos/1000?image";
 const selectedPlace = ref(null);
 const selectedPlacePhotoIndex = ref(0);
+const selectedMarkers = [];
 
-let map = null;
-let markers = [];
-let service = null;
-
-//當 selectedPlace 改變時，重設圖片索引
+//重設圖片索引
 watch(selectedPlace, (newVal) => {
   if (newVal) {
     selectedPlacePhotoIndex.value = 0;
@@ -196,61 +222,43 @@ function initMap() {
     cameraControl: false,
     scaleControl: false,
     fullscreenControl: false,
-    errorControl: true,
     streetViewControl: false,
     streetViewControlOptions: {
       position: google.maps.ControlPosition.LEFT_TOP,
     },
   });
-  service = new google.maps.places.PlacesService(map);
-  // 取得地圖上景點的詳細資料
-  map.addListener("click", function (event) {
-  if (event.placeId) {
-    event.stop();
-
-    markers.forEach(marker => marker.setMap(null));
-    markers = [];
-
-    const placeId = event.placeId;
-
-    const detailRequest = {
-      placeId,
-      fields: [
-        "name",
-        "formatted_address",
-        "geometry",
-        "rating",
-        "user_ratings_total",
-        "photos",
-        "business_status",
-        "icon",
-      ],
-    };
-
-    service.getDetails(detailRequest, (detailResult, detailStatus) => {
-      if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-        selectedPlace.value = detailResult;
-
-        const marker = new google.maps.Marker({
-          position: detailResult.geometry.location,
-          map: map,
-          title: detailResult.name,
-        });
-        markers.push(marker);
-        if (!placeDetails.value.some((p) => p.place_id === detailResult.place_id)) {
-          placeDetails.value.push(detailResult);
-        }
-      } else {
-        console.warn("取得詳細資料失敗", detailStatus);
-      }
-    });
-  }
-});
-
 }
-// 搜尋地點
+// 路線計算並顯示在地圖上
+function calculateRoute(origin, destination) {
+  directionsService.route(
+    {
+      origin,
+      destination,
+      travelMode: travelMode.value,
+    },
+    (response, status) => {
+      if (status === "OK") {
+        directionsRenderer.setDirections(response);
+        const leg = response.routes[0].legs[0];
+        result.value = {
+          distance: leg.distance.text,
+          duration: leg.duration.text,
+        };
+      } else {
+        alert("路線規劃失敗：" + status);
+      }
+    }
+  );
+}
+// 搜尋附近地點
 function searchPlace() {
   if (!searchQuery.value || !map) return;
+  
+  selectedMarkers.forEach((m) => m.setMap(null));
+  selectedMarkers.length = 0;
+  selectedPlace.value = null;
+  if (directionsRenderer) directionsRenderer.setDirections({ routes: [] });
+  
 
   markers.forEach((marker) => marker.setMap(null));
   markers = [];
@@ -271,10 +279,12 @@ function handleResults(results, status, pagination) {
     alert("找不到地點！");
     return;
   }
+  const firstPlace = results[0];
+  if (firstPlace.geometry && firstPlace.geometry.location) {
+    map.setCenter(firstPlace.geometry.location);
+  }
   results.forEach((place) => {
     if (!place.geometry || !place.geometry.location) return;
-
-    map.setCenter(place.geometry.location);
 
     const marker = new google.maps.Marker({
       map,
@@ -325,7 +335,7 @@ function handleResults(results, status, pagination) {
     });
   });
 
-  // 分頁處理
+ 
   if (pagination && pagination.hasNextPage) {
     nextPageFunc.value = () => pagination.nextPage();
     hasMoreResults.value = true;
@@ -333,10 +343,18 @@ function handleResults(results, status, pagination) {
     hasMoreResults.value = false;
   }
 }
-// 載入下一頁
+// 卡片頁：載入下一頁
 function loadNextPage() {
   if (nextPageFunc.value) {
     nextPageFunc.value();
+  }
+}
+
+// 重新計算路線（目前沒用到）
+function recalculateRoute() {
+  if (isToggled.value) return;
+  if (markers.length === 2) {
+    calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
 }
 
@@ -344,6 +362,79 @@ onMounted(async () => {
   try {
     await loadGoogleMaps();
     initMap();
+
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+      suppressMarkers: true,
+    });
+    directionsRenderer.setMap(map);
+    service = new google.maps.places.PlacesService(map);
+
+    map.addListener("click", (event) => {
+      markers.forEach((marker) => marker.setMap(null));
+      markers = [];
+      placeDetails.value = [];
+      nextPageFunc.value = null;
+      hasMoreResults.value = false;
+      if (isToggled.value) return;
+
+      if (event.placeId) {
+        event.stop();
+
+        const placeId = event.placeId;
+        const detailRequest = {
+          placeId,
+          fields: [
+            "name",
+            "formatted_address",
+            "geometry",
+            "rating",
+            "user_ratings_total",
+            "photos",
+            "business_status",
+            "icon",
+          ],
+        };
+
+        service.getDetails(detailRequest, (detailResult, detailStatus) => {
+          if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
+            // 第三個點時，重置
+            if (selectedMarkers.length === 2) {
+              selectedMarkers.forEach((m) => m.setMap(null));
+              selectedMarkers.length = 0;
+              selectedPlace.value = null;
+              if (directionsRenderer)
+                directionsRenderer.setDirections({ routes: [] });
+            }
+
+            const marker = new google.maps.Marker({
+              position: detailResult.geometry.location,
+              map,
+              title: detailResult.name,
+            });
+            selectedMarkers.push(marker);
+
+            if (selectedMarkers.length === 1) {
+              // 第一次點，顯示卡片
+              selectedPlace.value = detailResult;
+            } else if (selectedMarkers.length === 2) {
+              // 第二次點，收卡片，畫路線
+              selectedPlace.value = null;
+              calculateRoute(
+                selectedMarkers[0].getPosition(),
+                selectedMarkers[1].getPosition()
+              );
+            }
+          } else {
+            console.warn("取得詳細資料失敗", detailStatus);
+          }
+        });
+      } else {
+        // 點地圖非place的地方，這邊可以自己調整邏輯，這裡先不處理
+        // 或你想也可以讓它reset狀態
+        console.log("點擊了非place地點");
+      }
+    });
   } catch (err) {
     alert("❌ Google Maps 載入失敗");
     console.error(err);
@@ -364,3 +455,19 @@ onMounted(async () => {
   // ];
 });
 </script>
+
+<style scoped>
+.controls {
+  position: absolute;
+  bottom: 40px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 1;
+}
+</style>
