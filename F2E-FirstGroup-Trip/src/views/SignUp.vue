@@ -1,13 +1,36 @@
 <template>
-    <h2>註冊頁面</h2>
-    <form class="signup-form" @submit.prevent="signUp">
-        <input v-model="email" type="email" placeholder="請輸入電子郵件" />
-        <input v-model="username" type="text" placeholder="請輸入帳號" />
-        <input v-model="password" type="password" placeholder="請輸入密碼" />
-        <input v-model="phone" placeholder="請輸入手機號碼" />
-        <button>註冊</button>
-    </form>
+        <h2 class="text-center text-xl font-semibold mb-4">註冊頁面</h2>
+        <form
+            class="flex flex-col gap-[10px] w-[300px] mx-auto"
+            @submit.prevent="signUp"
+        >
+            <input
+                v-model="email"
+                type="email"
+                placeholder="請輸入電子郵件"
+                class="p-[8px] text-[14px] border border-[#aaa] rounded"
+            />
+            <input
+                v-model="password"
+                type="password"
+                placeholder="請輸入密碼"
+                class="p-[8px] text-[14px] border border-[#aaa] rounded"
+            />
+            <input
+                v-model="phone"
+                placeholder="請輸入手機號碼"
+                class="p-[8px] text-[14px] border border-[#aaa] rounded"
+            />
+            <button
+                type="submit"
+                class="p-[10px] bg-[#6a5acd] text-white border-0 rounded cursor-pointer hover:bg-[#483d8b]"
+            >
+                註冊
+            </button>
+        </form>
 </template>
+
+
 
 
 <script setup>
@@ -17,7 +40,6 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 
 const email = ref('')
-const username = ref('')
 const password = ref('')
 const phone = ref('')
 const router = useRouter()
@@ -26,9 +48,9 @@ const router = useRouter()
 
 const signUp = async () => {
     
-    console.log(email.value, username.value, password.value, phone.value)
+    console.log(email.value, password.value, phone.value)
 
-    if (!email.value || !username.value || !password.value || !phone.value) {
+    if (!email.value || !password.value || !phone.value) {
         Swal.fire({
             icon: 'error',
             title: '欄位未填寫',
@@ -61,34 +83,14 @@ const signUp = async () => {
         return;
     }
 
-    //帳號驗證(僅限英數，不允許特殊字元)
-    const isValidUsername = /^[a-zA-Z0-9]+$/;
-    if (!isValidUsername.test(username.value)) {
-        Swal.fire({
-            icon: 'error',
-            title: '帳號格式錯誤',
-            text:'帳號名稱僅限英文字母與數字組成'
-        })
-        return;
-    }
-
-    const existsUsername = user.find(user => user.username === username.value)
-    if (existsUsername) {
-        Swal.fire({
-            icon: 'error',
-            title: '帳號重複註冊',
-            text:'帳號名稱已有人使用'
-        })
-        return;
-    }
-    // 密碼驗證（8字以上 + 英文 + 數字 + 不可與帳號相同）
+    // 密碼驗證（8字以上 + 英文 + 數字 + 不可與信箱相同）
     const isValidPassword = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password.value)
-    const notSameAsUsername = password.value !== username.value
-        if (!isValidPassword || !notSameAsUsername) {
+    const notSameAsEmail = password.value !== email.value
+        if (!isValidPassword || !notSameAsEmail) {
         Swal.fire({
             icon: 'error',
             title: '密碼不符合格式',
-            text:'密碼須至少8字以上 + 英數混合 ， 不可與帳號相同'
+            text:'密碼須至少8字以上 + 英數混合 ， 不可與信箱相同'
         })
         return;
     }
@@ -107,7 +109,6 @@ const signUp = async () => {
     //     user:{
     //         id: Date.now(),
     //         email: email.value,
-    //         username: username.value,
     //         password: password.value,
     //         phone: phone.value
     //     }
@@ -119,13 +120,11 @@ const signUp = async () => {
     try {
         await axios.post("http://localhost:3000/users", {
             email: email.value,
-            username: username.value,
             password: password.value,
             phone: phone.value
         });
         // 清空輸入欄位
         email.value = ''
-        username.value = ''
         password.value = ''
         phone.value = ''
 
@@ -133,12 +132,15 @@ const signUp = async () => {
             icon: 'success',
             title: '註冊成功',
             text: '註冊成功！歡迎加入✨',
-            timer: 2000, // 2s auto-close + 自動跳轉
+            timer: 3000, // 3s auto-close + 自動跳轉
             showConfirmButton: false, // 不顯示確認按鈕
-        }); 
 
-        router.push(`/profile`) 
+            didClose: () => {
+                router.push(`/profile`);
+            }
         // 等 Swal 的確認按鈕被按下後才導向會員頁
+        }); 
+        
 
     } catch (err) {
         const errText = err.response?.data?.error?.join("<br />") || "註冊失敗，請稍後重試";
@@ -152,33 +154,4 @@ const signUp = async () => {
 
 </script>
 
-<style scoped>
-.signup-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 300px;
-    margin: auto;
-}
-
-.signup-form input {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #aaa;
-    border-radius: 4px;   
-}
-
-.signup-form button {
-    padding: 10px;
-    background-color: #6a5acd;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.signup-form button:hover {
-    background-color: #483d8b;
-}
-</style>
 
