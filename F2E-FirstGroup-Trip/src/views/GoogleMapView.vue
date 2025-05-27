@@ -157,7 +157,7 @@
     <button @click="hotel">hotel</button>
   </div> -->
   <aside
-    class="w-20 p-4 space-y-2 bg-gray-400/90 absolute left-4 top-1/2 translate-y-[-50%] rounded-full"
+    class="w-20 p-4 space-y-2 bg-gray-400/90 absolute left-5 top-1/2 translate-y-[-50%] rounded-full"
   >
     <button
       v-for="item in categories"
@@ -171,7 +171,7 @@
     <div class="relative">
       <button
         @click="showCustomCategory = !showCustomCategory"
-        class="block w-full text-left px-3 py-2 rounded hover:bg-green-100 text-green-700 font-semibold"
+        class="block w-full text-left px-3 py-2 rounded hover:bg-green-100 text-green-700 font-semibold left-3.5"
       >
         ➕
       </button>
@@ -179,10 +179,24 @@
       <!-- 展開區塊 -->
       <div
         v-if="showCustomCategory"
-        class="absolute z-10 bg-gray-400/90 rounded p-3 w-80 shadow-md top 0 left 400"
+        class="absolute z-10 bg-gray-400/90 rounded-4xl p-3 w-80 shadow-md bottom-1 left-18"
       >
-        <button v-for="item in categories" :key="item.type" class="m-4">
+        <button
+          @click="removeCategory(item)"
+          v-for="item in categories"
+          :key="item.type"
+          class="m-4"
+        >
           {{ item.label }} ❌
+        </button>
+        <hr />
+        <button
+          @click="addCategory(item)"
+          v-for="item in placeCategories"
+          :key="item.type"
+          class="m-4 cursor-pointer"
+        >
+          {{ item.label }}
         </button>
       </div>
     </div>
@@ -224,17 +238,34 @@ const defaultImage = "https://picsum.photos/1000?image";
 const selectedPlace = ref(null);
 const selectedPlacePhotoIndex = ref(0);
 const selectedMarkers = [];
+//
+const showCustomCategory = ref(false);
+const maxCategoryCount = 5;
 //篩選種類
-const categories = [
+const categories = ref([
   { type: "restaurant", label: "🍽️" },
   { type: "lodging", label: "🏨" },
   { type: "residence", label: "🏠" },
   { type: "tourist_attraction", label: "📍" },
   // { type: "other_options", label: "+" },
-];
-const showCustomCategory = ref(false);
-const customCategories = ref([]);
-const newCategoryInput = ref("");
+]);
+const placeCategories = ref([
+  { type: "cafe", label: "咖啡廳" },
+  { type: "museum", label: "博物館" },
+  { type: "park", label: "公園" },
+  { type: "zoo", label: "動物園" },
+  { type: "amusement_park", label: "遊樂園" },
+  { type: "aquarium", label: "水族館" },
+  { type: "art_gallery", label: "藝廊" },
+  { type: "bar", label: "酒吧" },
+  { type: "book_store", label: "書店" },
+  { type: "gym", label: "健身房" },
+  { type: "shopping_mall", label: "購物中心" },
+  { type: "supermarket", label: "超市" },
+  { type: "night_club", label: "夜店" },
+  { type: "lodging", label: "住宿" },
+  { type: "tourist_attraction", label: "觀光景點" },
+]);
 
 //重設圖片索引
 watch(selectedPlace, (newVal) => {
@@ -242,6 +273,30 @@ watch(selectedPlace, (newVal) => {
     selectedPlacePhotoIndex.value = 0;
   }
 });
+
+function addCategory(item) {
+  const exists = categories.value.some((cat) => cat.type === item.type);
+  if (exists) return; // 已存在就不處理
+  if (categories.value.length >= maxCategoryCount) {
+    alert("❗ 已達上限，最多只能選擇 5 種類別");
+    return;
+  }
+
+  categories.value.push(item);
+  placeCategories.value = placeCategories.value.filter(
+    (cat) => cat.type !== item.type
+  );
+}
+function removeCategory(item) {
+  // 從已選類別移除
+  categories.value = categories.value.filter((cat) => cat.type !== item.type);
+
+  // 加回候選清單，如果還沒在裡面
+  const exists = placeCategories.value.some((cat) => cat.type === item.type);
+  if (!exists) {
+    placeCategories.value.push(item);
+  }
+}
 
 // 載入 Google Maps API
 function loadGoogleMaps() {
