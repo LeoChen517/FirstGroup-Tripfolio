@@ -1,37 +1,38 @@
 <template>
-    <main class="container py-5">
-      <h1 class="mb-4">登入頁面</h1>
+	<main class="pl-[100px] pt-[100px]">
+		<h1 class="text-2xl font-bold mb-6">登入頁面</h1>
 
-      <div v-if="showError" class="alert alert-danger d-flex align-items-center" role="alert">
-        <svg xmlns="http://www.w3.org/2000/svg" class="bi flex-shrink-0 me-2" viewBox="0 0 16 16" role="img" aria-label="Warning:" width="20">
-          <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 
-          3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-        </svg>
-        <div class="ms-2">{{ errorMessage }}</div>
-      </div>
-  
+		<div v-if="showError" class="flex items-start gap-2 bg-pink-500 text-red-800 border border-red-400 px-4 py-3 rounded mb-4">
+			<i class="fas fa-triangle-exclamation text-xl mt-1"></i>
+			<div>{{ errorMessage }}</div>
+		</div>
 
-      <form v-if="!isLoggedIn" @submit.prevent="login">
-        <div class="mb-3">
-          <label for="email" class="form-label">Email</label>
-          <input v-model="email" type="email" class="form-control" id="email" required />
-        </div>
-  
-        <div class="mb-3">
-          <label for="password" class="form-label">密碼</label>
-          <input v-model="password" type="password" class="form-control" id="password" required />
-        </div>
-  
-        <button type="submit" class="btn btn-primary">登入</button>
-        <button type="submit" class="btn btn-primary">註冊</button>
-      </form>
+		<form v-if="!isLoggedIn" @submit.prevent="login" class="space-y-6">
+			<div>
+				<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+				<input v-model="email" type="email" id="email" required
+					class="mb-5 block w-1/2 rounded-md border border-gray-300 shadow-sm p-2" />
+			</div>
 
-      <div v-if="isLoggedIn">
-        <p class="text-success">您已登入</p>
-        <button class="btn btn-danger" @click="logout">登出</button>
-      </div>
-    </main>
-  </template>
+			<div>
+				<label for="password" class="block text-sm font-medium text-gray-700">密碼</label>
+				<input v-model="password" type="password" id="password" required
+					class="mb-5 block w-1/2 rounded-md border border-gray-300 shadow-sm p-2 " />
+			</div>
+
+			<div class="flex justify-end gap-[20px] mt-[10px] w-1/2">
+				<button type="submit" class="w-[100px] bg-blue-200 text-black py-2 rounded transition">登入</button>
+				<button type="button" class="w-[100px] bg-gray-200 text-black py-2 rounded transition">註冊</button>
+			</div>
+		</form>
+
+		<div v-if="isLoggedIn" class="mt-6">
+			<p class="text-green-600 font-semibold mb-4">您已登入</p>
+			<button @click="logout" class="bg-red-600 text-black py-2 px-4 rounded transition">登出</button>
+		</div>
+	</main>
+</template>
+
   
   <script setup>
   import { ref, onMounted } from 'vue'
@@ -64,15 +65,15 @@
     try {
       const res = await axios.post('http://localhost:3000/api/login'
 , userData)
-      const token = res.data.token
-      localStorage.setItem(TOKEN_NAME, token)
-      isLoggedIn.value = true
-      showError.value = false
-      clearText()
+    const token = res.data.token
+    localStorage.setItem(TOKEN_NAME, token)
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    isLoggedIn.value = true
+    showError.value = false
+    clearText()
     } catch (err) {
       showError.value = true
-      showError.value = true
-    errorMessage.value = err.response?.data?.message || '登入失敗，請檢查郵件與密碼'
+      errorMessage.value = err.response?.data?.message || '登入失敗，請檢查郵件與密碼'
     }
   }
   
