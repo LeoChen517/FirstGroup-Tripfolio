@@ -1,4 +1,3 @@
-// controllers/authController.js
 const db = require("../db");
 const { users } = require("../db/schema");
 const { eq } = require("drizzle-orm"); 
@@ -8,8 +7,6 @@ require("dotenv").config();
 
 async function login(req, res) {
 	const { email, password } = req.body;
-
-	console.log("JWT_SECRET from .env:", process.env.JWT_SECRET);
 
 	try {
 		const result = await db.select().from(users).where(eq(users.email, email));
