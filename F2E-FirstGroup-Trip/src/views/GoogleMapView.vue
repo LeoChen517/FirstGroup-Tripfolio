@@ -167,8 +167,28 @@
     >
       {{ item.label }}
     </button>
+    <!-- 🔽 新增自訂分類選單 -->
+    <div class="relative">
+      <button
+        @click="showCustomCategory = !showCustomCategory"
+        class="block w-full text-left px-3 py-2 rounded hover:bg-green-100 text-green-700 font-semibold"
+      >
+        ➕
+      </button>
+
+      <!-- 展開區塊 -->
+      <div
+        v-if="showCustomCategory"
+        class="absolute z-10 bg-gray-400/90 rounded p-3 w-80 shadow-md top 0 left 400"
+      >
+        <button v-for="item in categories" :key="item.type" class="m-4">
+          {{ item.label }} ❌
+        </button>
+      </div>
+    </div>
   </aside>
-  <div class="controls">
+
+  <!-- <div class="controls">
     <div v-if="result">
       <p>兩點距離：{{ result.distance }}，預估時間：{{ result.duration }}</p>
     </div>
@@ -180,7 +200,7 @@
         <option value="TRANSIT">🚇 大眾運輸</option>
       </select>
     </label>
-  </div>
+  </div> -->
 </template>
 
 <script setup>
@@ -204,6 +224,17 @@ const defaultImage = "https://picsum.photos/1000?image";
 const selectedPlace = ref(null);
 const selectedPlacePhotoIndex = ref(0);
 const selectedMarkers = [];
+//篩選種類
+const categories = [
+  { type: "restaurant", label: "🍽️" },
+  { type: "lodging", label: "🏨" },
+  { type: "residence", label: "🏠" },
+  { type: "tourist_attraction", label: "📍" },
+  // { type: "other_options", label: "+" },
+];
+const showCustomCategory = ref(false);
+const customCategories = ref([]);
+const newCategoryInput = ref("");
 
 //重設圖片索引
 watch(selectedPlace, (newVal) => {
@@ -373,13 +404,7 @@ function recalculateRoute() {
     calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
 }
-const categories = [
-  { type: "restaurant", label: "🍽️" },
-  { type: "lodging", label: "🏨" },
-  { type: "residence", label: "🏠" },
-  { type: "tourist_attraction", label: "📍" },
-  { type: "other_options", label: "+" },
-];
+
 //篩選景點
 function searchByCategory(type) {
   if (!map || !type) return;
