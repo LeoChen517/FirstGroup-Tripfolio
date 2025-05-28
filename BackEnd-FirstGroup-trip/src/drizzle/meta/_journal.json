@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1748089450130,
+      "tag": "0000_fearless_katie_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1748461135847,
+      "tag": "0001_ancient_inhumans",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748462408983,
+      "tag": "0002_left_marvel_zombies",
+      "breakpoints": true
+    }
+  ]
+}

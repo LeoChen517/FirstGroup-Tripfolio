@@ -1,0 +1,1 @@
+ALTER TABLE "emailPreferences" RENAME TO "email_preferences";
