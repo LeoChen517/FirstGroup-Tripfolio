@@ -30,8 +30,7 @@ coverage
 *.tsbuildinfo
 
 #假資料API
-F2E-FirstGroup-Trip/mock/
+backend/mock/
 
-# API
 .env.local
 .env
