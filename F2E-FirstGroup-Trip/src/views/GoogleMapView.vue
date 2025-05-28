@@ -1,4 +1,5 @@
 <template>
+
   <div
     class="absolute top-2.5 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-2.5 bg-gray-400/90 px-2.5 py-2.5 rounded-full"
   >
@@ -32,6 +33,7 @@
         搜尋
       </button>
     </div>
+
     <!-- Toggle switch -->
     <label class="relative inline-block w-20 h-8.5">
       <input type="checkbox" v-model="isToggled" class="opacity-0 w-0 h-0" />
@@ -48,7 +50,9 @@
       </span>
     </label>
   </div>
+
   <div v-show="!isToggled" ref="mapRef" class="w-screen h-screen m-0 p-0"></div>
+
   <div
     v-show="isToggled"
     v-if="placeDetails.length"
@@ -88,6 +92,7 @@
       </button>
     </div>
   </div>
+
   <!--地點詳細資訊 -->
   <div
     v-if="selectedPlace"
@@ -150,6 +155,7 @@
       </div>
     </div>
   </div>
+
   <div class="controls">
     <div v-if="result">
       <p>兩點距離：{{ result.distance }}，預估時間：{{ result.duration }}</p>
@@ -163,6 +169,18 @@
       </select>
     </label>
   </div>
+
+  <!-- 選擇地區 -->
+<div class="absolute top-4 left-4 bg-white p-3 rounded shadow z-10">
+  <label for="city-select">選擇地區：</label>
+  <select id="city-select" @change="moveToCity($event)">
+    <option disabled selected>請選擇</option>
+    <option v-for="city in cities" :key="city.name" :value="city.name">
+      {{ city.name }}
+    </option>
+  </select>
+</div>
+  
 </template>
 
 <script setup>
@@ -186,6 +204,13 @@ const defaultImage = "https://picsum.photos/1000?image";
 const selectedPlace = ref(null);
 const selectedPlacePhotoIndex = ref(0);
 const selectedMarkers = [];
+const cities = [
+  { name: '台北市', lat: 25.033964, lng: 121.564472 },
+  { name: '新北市', lat: 25.016982, lng: 121.462786 },
+  { name: '台中市', lat: 24.147736, lng: 120.673648 },
+  { name: '台南市', lat: 22.999728, lng: 120.227028 },
+  { name: '高雄市', lat: 22.627278, lng: 120.301435 },
+];
 
 //重設圖片索引
 watch(selectedPlace, (newVal) => {
@@ -212,6 +237,7 @@ function loadGoogleMaps() {
     document.head.appendChild(script);
   });
 }
+
 // 初始化地圖
 function initMap() {
   map = new google.maps.Map(mapRef.value, {
@@ -228,6 +254,7 @@ function initMap() {
     },
   });
 }
+
 // 路線計算並顯示在地圖上
 function calculateRoute(origin, destination) {
   directionsService.route(
@@ -250,6 +277,7 @@ function calculateRoute(origin, destination) {
     }
   );
 }
+
 // 搜尋附近地點
 function searchPlace() {
   if (!searchQuery.value || !map) return;
@@ -272,6 +300,7 @@ function searchPlace() {
   };
   service.nearbySearch(request, handleResults);
 }
+
 // 處理搜尋結果
 function handleResults(results, status, pagination) {
   if (status !== google.maps.places.PlacesServiceStatus.OK || !results.length) {
@@ -341,6 +370,7 @@ function handleResults(results, status, pagination) {
     hasMoreResults.value = false;
   }
 }
+
 // 卡片頁：載入下一頁
 function loadNextPage() {
   if (nextPageFunc.value) {
@@ -348,12 +378,59 @@ function loadNextPage() {
   }
 }
 
-// 重新計算路線（目前沒用到）
+// 重新計算路線
 function recalculateRoute() {
   if (isToggled.value) return;
   if (markers.length === 2) {
     calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
+}
+
+
+// 選擇縣市後移動地圖並搜尋景點
+function moveToCity(event) {
+  const cityName = event.target.value;
+  const city = cities.find((c) => c.name === cityName);
+  if (!city || !map) return;
+
+  const center = new google.maps.LatLng(city.lat, city.lng);
+  map.setCenter(center);
+  map.setZoom(13);
+
+  searchNearby(city.lat, city.lng);
+}
+
+// 搜尋附近景點
+function searchNearby(lat, lng) {
+  if (!service) {
+    service = new google.maps.places.PlacesService(map);
+  }
+
+  const location = new google.maps.LatLng(lat, lng);
+
+  service.nearbySearch(
+    {
+      location,
+      radius: 5000,
+      type: "tourist_attraction", // 景點類型
+    },
+    (results, status, pagination) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK) {
+        // 清除舊的 marker
+        markers.forEach((m) => m.setMap(null));
+        markers = [];
+
+        results.forEach((place) => {
+          const marker = new google.maps.Marker({
+            map,
+            position: place.geometry.location,
+            title: place.name,
+          });
+          markers.push(marker);
+        });
+      }
+    }
+  );
 }
 
 onMounted(async () => {
@@ -452,6 +529,7 @@ onMounted(async () => {
   //   }
   // ];
 });
+
 </script>
 
 <style scoped>
