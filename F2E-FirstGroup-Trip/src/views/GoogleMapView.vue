@@ -168,26 +168,34 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 
-const mapRef = ref(null);
-let map = null;
-let markers = [];
-let service = null;
+// 地圖與搜尋
+const mapRef = ref(null);              // 地圖容器 (initMap)
+const searchQuery = ref("");           // 搜尋關鍵字 (searchPlace)
+const isToggled = ref(false);          // 切換地圖 / 卡片視圖
 
-const result = ref(null);
-const travelMode = ref("DRIVING");
-let directionsService, directionsRenderer;
-
-const searchQuery = ref("");
-const isToggled = ref(false);
-const placeDetails = ref([]);
-const nextPageFunc = ref(null);
-const hasMoreResults = ref(false);
+// 地點資料
+const placeDetails = ref([]);          // 搜尋結果詳細資訊 (searchPlace, handleResults)
+const nextPageFunc = ref(null);        // 分頁函式 (handleResults, loadNextPage)
+const hasMoreResults = ref(false);     // 是否有更多結果 (searchPlace, handleResults)
 const defaultImage = "https://picsum.photos/1000?image";
-const selectedPlace = ref(null);
-const selectedPlacePhotoIndex = ref(0);
-const selectedMarkers = [];
 
-//重設圖片索引
+// 選擇的地點與圖片
+const selectedPlace = ref(null);       // 使用者選擇的地點 (點擊 marker 或卡片)
+const selectedPlacePhotoIndex = ref(0);// 當前顯示的圖片索引 (watch selectedPlace)
+
+// 路線規劃
+const travelMode = ref("DRIVING");     // 交通方式 (select dropdown)
+const result = ref(null);              // 路線結果（距離與時間）(calculateRoute)
+
+// Google Maps 實例與服務
+let map = null;                        // 地圖實例 (initMap)
+let markers = [];                      // 所有標記 (searchPlace, 點擊地圖)
+let service = null;                    // 地點服務 (initMap)
+let directionsService;                 // 路線服務 (onMounted)
+let directionsRenderer;                // 路線顯示器 (onMounted)
+
+
+//當 selectedPlace 改變時，重設圖片索引
 watch(selectedPlace, (newVal) => {
   if (newVal) {
     selectedPlacePhotoIndex.value = 0;
@@ -222,42 +230,17 @@ function initMap() {
     cameraControl: false,
     scaleControl: false,
     fullscreenControl: false,
+    errorControl: true,
     streetViewControl: false,
     streetViewControlOptions: {
       position: google.maps.ControlPosition.LEFT_TOP,
     },
   });
+  service = new google.maps.places.PlacesService(map);
 }
-// 路線計算並顯示在地圖上
-function calculateRoute(origin, destination) {
-  directionsService.route(
-    {
-      origin,
-      destination,
-      travelMode: travelMode.value,
-    },
-    (response, status) => {
-      if (status === "OK") {
-        directionsRenderer.setDirections(response);
-        const leg = response.routes[0].legs[0];
-        result.value = {
-          distance: leg.distance.text,
-          duration: leg.duration.text,
-        };
-      } else {
-        alert("路線規劃失敗：" + status);
-      }
-    }
-  );
-}
-// 搜尋附近地點
+// 搜尋地點
 function searchPlace() {
   if (!searchQuery.value || !map) return;
-
-  selectedMarkers.forEach((m) => m.setMap(null));
-  selectedMarkers.length = 0;
-  selectedPlace.value = null;
-  if (directionsRenderer) directionsRenderer.setDirections({ routes: [] });
 
   markers.forEach((marker) => marker.setMap(null));
   markers = [];
@@ -278,12 +261,10 @@ function handleResults(results, status, pagination) {
     alert("找不到地點！");
     return;
   }
-  const firstPlace = results[0];
-  if (firstPlace.geometry && firstPlace.geometry.location) {
-    map.setCenter(firstPlace.geometry.location);
-  }
   results.forEach((place) => {
     if (!place.geometry || !place.geometry.location) return;
+
+    map.setCenter(place.geometry.location);
 
     const marker = new google.maps.Marker({
       map,
@@ -334,6 +315,7 @@ function handleResults(results, status, pagination) {
     });
   });
 
+  // 分頁處理
   if (pagination && pagination.hasNextPage) {
     nextPageFunc.value = () => pagination.nextPage();
     hasMoreResults.value = true;
@@ -341,116 +323,83 @@ function handleResults(results, status, pagination) {
     hasMoreResults.value = false;
   }
 }
-// 卡片頁：載入下一頁
+// 載入下一頁
 function loadNextPage() {
   if (nextPageFunc.value) {
     nextPageFunc.value();
   }
 }
+// 計算路線
+function calculateRoute(origin, destination) {
+  directionsService.route(
+    {
+      origin,
+      destination,
+      travelMode: travelMode.value,
+    },
+    (response, status) => {
+      if (status === "OK") {
+        directionsRenderer.setDirections(response);
 
-// 重新計算路線（目前沒用到）
+        const leg = response.routes[0].legs[0];
+        result.value = {
+          distance: leg.distance.text,
+          duration: leg.duration.text,
+        };
+      } else {
+        alert("路線規劃失敗：" + status);
+      }
+    }
+  );
+}
+// 重設地圖和標記
+function reset() {
+  result.value = null;
+  markers.forEach((marker) => marker.setMap(null));
+  markers = [];
+  if (directionsRenderer) {
+    directionsRenderer.setDirections({ routes: [] });
+  }
+}
+//  重新計算路線
 function recalculateRoute() {
-  if (isToggled.value) return;
   if (markers.length === 2) {
     calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
 }
-
 onMounted(async () => {
   try {
-    await loadGoogleMaps();
-    initMap();
+    await loadGoogleMaps(); // 等待 API 載入
+    initMap(); // 初始化地圖
 
+    // 初始化方向服務
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
     });
     directionsRenderer.setMap(map);
-    service = new google.maps.places.PlacesService(map);
 
-    map.addListener("click", (event) => {
-      markers.forEach((marker) => marker.setMap(null));
-      markers = [];
-      placeDetails.value = [];
-      nextPageFunc.value = null;
-      hasMoreResults.value = false;
-      if (isToggled.value) return;
+    // 設置地圖點擊事件
+    map.addListener("click", (e) => {
+      if (markers.length >= 2) reset();
 
-      if (event.placeId) {
-        event.stop();
+      const marker = new google.maps.Marker({
+        position: e.latLng,
+        map,
+      });
 
-        const placeId = event.placeId;
-        const detailRequest = {
-          placeId,
-          fields: [
-            "name",
-            "formatted_address",
-            "geometry",
-            "rating",
-            "user_ratings_total",
-            "photos",
-            "business_status",
-            "icon",
-          ],
-        };
+      markers.push(marker);
 
-        service.getDetails(detailRequest, (detailResult, detailStatus) => {
-          if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
-            // 第三個點時，重置
-            if (selectedMarkers.length === 2) {
-              selectedMarkers.forEach((m) => m.setMap(null));
-              selectedMarkers.length = 0;
-              selectedPlace.value = null;
-              if (directionsRenderer)
-                directionsRenderer.setDirections({ routes: [] });
-            }
-
-            const marker = new google.maps.Marker({
-              position: detailResult.geometry.location,
-              map,
-              title: detailResult.name,
-            });
-            selectedMarkers.push(marker);
-
-            if (selectedMarkers.length === 1) {
-              // 第一次點，顯示卡片
-              selectedPlace.value = detailResult;
-            } else if (selectedMarkers.length === 2) {
-              // 第二次點，收卡片，畫路線
-              selectedPlace.value = null;
-              calculateRoute(
-                selectedMarkers[0].getPosition(),
-                selectedMarkers[1].getPosition()
-              );
-            }
-          } else {
-            console.warn("取得詳細資料失敗", detailStatus);
-          }
-        });
-      } else {
-        // 點地圖非place的地方，這邊可以自己調整邏輯，這裡先不處理
-        // 或你想也可以讓它reset狀態
-        console.log("點擊了非place地點");
+      if (markers.length === 2) {
+        const origin = markers[0].getPosition();
+        const destination = markers[1].getPosition();
+        calculateRoute(origin, destination);
       }
     });
   } catch (err) {
     alert("❌ Google Maps 載入失敗");
     console.error(err);
   }
-  // 檢視卡片頁面樣式
-  // placeDetails.value = [
-  //   {
-  //     name: "星巴克台北101店",
-  //     formatted_address: "台北市信義區信義路五段7號",
-  //     photos: [
-  //       {
-  //         getUrl: ({ maxWidth }) => `https://picsum.photos/${maxWidth}/600?random=1`,
-  //       },
-  //     ],
-  //     rating: 4.3,
-  //     user_ratings_total: 152,
-  //   }
-  // ];
 });
 </script>
 
