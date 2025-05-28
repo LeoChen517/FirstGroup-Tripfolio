@@ -172,9 +172,8 @@
 
   <!-- 選擇地區 -->
 <div class="absolute top-4 left-4 bg-white p-3 rounded shadow z-10">
-  <label for="city-select">選擇地區：</label>
-  <select id="city-select" @change="moveToCity($event)">
-    <option disabled selected>請選擇</option>
+  <select @change="moveToCity($event)">
+    <option value="none">當前</option>
     <option v-for="city in cities" :key="city.name" :value="city.name">
       {{ city.name }}
     </option>
@@ -406,6 +405,29 @@ function recalculateRoute() {
 // 選擇縣市後移動地圖並搜尋景點
 function moveToCity(event) {
   const cityName = event.target.value;
+
+  if (cityName === "none") {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          const center = new google.maps.LatLng(userLat, userLng);
+          map.setCenter(center);
+          map.setZoom(15);
+
+          searchNearby(userLat, userLng);
+        },
+        () => {
+          alert("⚠️ 無法取得你的定位！");
+        }
+      );
+    } else {
+      alert("你的瀏覽器不支援定位功能");
+    }
+    return;
+  }
   const city = cities.find((c) => c.name === cityName);
   if (!city || !map) return;
 
