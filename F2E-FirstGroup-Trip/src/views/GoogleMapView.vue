@@ -340,24 +340,24 @@ function initMap() {
     streetViewControlOptions: {
       position: google.maps.ControlPosition.LEFT_TOP,
     },
-    styles: [
-      {
-        featureType: "poi",
-        elementType: "labels",
-        stylers: [{ visibility: "off" }],
-      },
+    // styles: [
+    //   {
+    //     featureType: "poi",
+    //     elementType: "labels",
+    //     stylers: [{ visibility: "off" }],
+    //   },
 
-      {
-        featureType: "transit.station",
-        elementType: "all",
-        stylers: [{ visibility: "off" }],
-      },
-      {
-        featureType: "road",
-        elementType: "labels",
-        stylers: [{ visibility: "off" }],
-      },
-    ],
+    //   {
+    //     featureType: "transit.station",
+    //     elementType: "all",
+    //     stylers: [{ visibility: "off" }],
+    //   },
+    //   {
+    //     featureType: "road",
+    //     elementType: "labels",
+    //     stylers: [{ visibility: "off" }],
+    //   },
+    // ],
   });
 }
 // 路線計算並顯示在地圖上
