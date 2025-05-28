@@ -14,7 +14,9 @@
     "@fawmi/vue-google-maps": "^0.9.79",
     "@tailwindcss/vite": "^4.1.6",
     "axios": "^1.9.0",
+    "drizzle-orm": "^0.43.1",
     "express": "^5.1.0",
+    "pg": "^8.16.0",
     "pinia": "^3.0.1",
     "sweetalert2": "^11.21.2",
     "tailwindcss": "^4.1.6",
@@ -22,7 +24,9 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@types/pg": "^8.15.2",
     "@vitejs/plugin-vue": "^5.2.3",
+    "drizzle-kit": "^0.31.1",
     "vite": "^6.2.4",
     "vite-plugin-vue-devtools": "^7.7.2"
   }
