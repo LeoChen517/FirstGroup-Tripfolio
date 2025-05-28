@@ -227,6 +227,7 @@ const cities = [
   { name: '金門縣', lat: 24.436679, lng: 118.317088 },
   { name: '連江縣', lat: 26.16058, lng: 119.950946 },
 ];
+
 //重設圖片索引
 watch(selectedPlace, (newVal) => {
   if (newVal) {
@@ -401,12 +402,14 @@ function recalculateRoute() {
   }
 }
 
-
-// 選擇縣市後移動地圖並搜尋景點
+// 切換城市
 function moveToCity(event) {
   const cityName = event.target.value;
 
   if (cityName === "none") {
+    markers.forEach((m) => m.setMap(null));
+    markers = [];
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -416,8 +419,7 @@ function moveToCity(event) {
           const center = new google.maps.LatLng(userLat, userLng);
           map.setCenter(center);
           map.setZoom(15);
-
-          searchNearby(userLat, userLng);
+          searchNearby(userLat, userLng, 2000);
         },
         () => {
           alert("⚠️ 無法取得你的定位！");
@@ -428,6 +430,7 @@ function moveToCity(event) {
     }
     return;
   }
+
   const city = cities.find((c) => c.name === cityName);
   if (!city || !map) return;
 
@@ -435,29 +438,58 @@ function moveToCity(event) {
   map.setCenter(center);
   map.setZoom(13);
 
-  searchNearby(city.lat, city.lng);
+  searchNearbyByText(cityName, center, 5000);
 }
 
-// 搜尋附近景點
-function searchNearby(lat, lng) {
+// 搜尋附近旅遊景點(用半徑)
+function searchNearby(lat, lng, radius = 5000) {
   if (!service) {
     service = new google.maps.places.PlacesService(map);
   }
 
   const location = new google.maps.LatLng(lat, lng);
 
+  markers.forEach((m) => m.setMap(null));
+  markers = [];
+
   service.nearbySearch(
     {
       location,
-      radius: 5000,
-      type: "tourist_attraction", // 景點類型
+      radius,
+      type: "tourist_attraction",
     },
-    (results, status, pagination) => {
+    (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK) {
-        // 清除舊的 marker
-        markers.forEach((m) => m.setMap(null));
-        markers = [];
+        results.forEach((place) => {
+          const marker = new google.maps.Marker({
+            map,
+            position: place.geometry.location,
+            title: place.name,
+          });
+          markers.push(marker);
+        });
+      }
+    }
+  );
+}
 
+// 搜尋附近旅遊景點(用城市名稱)
+function searchNearbyByText(cityName, center, radius = 5000) {
+  if (!service) {
+    service = new google.maps.places.PlacesService(map);
+  }
+
+  markers.forEach((m) => m.setMap(null));
+  markers = [];
+
+  service.textSearch(
+    {
+      query: `tourist attractions ${cityName}`,
+      location: center,
+      radius,
+    },
+    (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK) {
         results.forEach((place) => {
           const marker = new google.maps.Marker({
             map,
