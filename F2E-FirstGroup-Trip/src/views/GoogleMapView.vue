@@ -157,7 +157,7 @@
     <button @click="hotel">hotel</button>
   </div> -->
   <aside
-    class="w-20 p-4 space-y-2 bg-gray-400/90 absolute left-5 top-1/2 translate-y-[-50%] rounded-full"
+    class="w-20 p-4 space-y-2 bg-gray-400/30 absolute left-5 top-1/2 translate-y-[-50%] rounded-full shadow-4xl backdrop-blur-2xl"
   >
     <button
       v-for="item in categories"
@@ -175,34 +175,42 @@
       >
         ➕
       </button>
-
-      <!-- 展開區塊 -->
-      <div
-        v-if="showCustomCategory"
-        class="absolute z-10 bg-gray-400/90 rounded-4xl p-3 w-80 shadow-md bottom-1 left-18"
+      <transition
+        enter-active-class="transition-all duration-300 ease-in-out"
+        enter-from-class="-translate-x-full opacity-0"
+        enter-to-class="translate-x-0 opacity-100"
+        leave-active-class="transition-all duration-300 ease-in-out"
+        leave-from-class="translate-x-0 opacity-100"
+        leave-to-class="-translate-x-full opacity-0"
       >
-        <button
-          @click="removeCategory(item)"
-          v-for="item in categories"
-          :key="item.type"
-          class="m-4"
+        <!-- 展開區塊 -->
+        <div
+          v-if="showCustomCategory"
+          class="absolute z-10 bg-gray-400/90 rounded-4xl p-3 w-80 shadow-md bottom-1 left-18 transform transition-all duration-300 ease-in-out translate-x-0 opacity-100"
         >
-          {{ item.label }} ❌
-        </button>
-        <hr />
-        <button
-          @click="addCategory(item)"
-          v-for="item in placeCategories"
-          :key="item.type"
-          class="m-4 cursor-pointer"
-        >
-          {{ item.label }}
-        </button>
-      </div>
+          <button
+            @click="removeCategory(item)"
+            v-for="item in categories"
+            :key="item.type"
+            class="m-4"
+          >
+            {{ item.label }} ❌
+          </button>
+          <hr />
+          <button
+            @click="addCategory(item)"
+            v-for="item in placeCategories"
+            :key="item.type"
+            class="m-4 cursor-pointer"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+      </transition>
     </div>
   </aside>
 
-  <!-- <div class="controls">
+  <div class="controls">
     <div v-if="result">
       <p>兩點距離：{{ result.distance }}，預估時間：{{ result.duration }}</p>
     </div>
@@ -214,7 +222,7 @@
         <option value="TRANSIT">🚇 大眾運輸</option>
       </select>
     </label>
-  </div> -->
+  </div>
 </template>
 
 <script setup>
@@ -241,6 +249,10 @@ const selectedMarkers = [];
 //
 const showCustomCategory = ref(false);
 const maxCategoryCount = 5;
+//
+const userPosition = ref(null);
+const nearbyMarkers = ref([]);
+
 //篩選種類
 const categories = ref([
   { type: "restaurant", label: "🍽️" },
@@ -263,8 +275,6 @@ const placeCategories = ref([
   { type: "shopping_mall", label: "購物中心" },
   { type: "supermarket", label: "超市" },
   { type: "night_club", label: "夜店" },
-  { type: "lodging", label: "住宿" },
-  { type: "tourist_attraction", label: "觀光景點" },
 ]);
 
 //重設圖片索引
@@ -330,6 +340,24 @@ function initMap() {
     streetViewControlOptions: {
       position: google.maps.ControlPosition.LEFT_TOP,
     },
+    styles: [
+      {
+        featureType: "poi",
+        elementType: "labels",
+        stylers: [{ visibility: "off" }],
+      },
+
+      {
+        featureType: "transit.station",
+        elementType: "all",
+        stylers: [{ visibility: "off" }],
+      },
+      {
+        featureType: "road",
+        elementType: "labels",
+        stylers: [{ visibility: "off" }],
+      },
+    ],
   });
 }
 // 路線計算並顯示在地圖上
@@ -478,11 +506,112 @@ function searchByCategory(type) {
   service.nearbySearch(request, handleResults);
 }
 
+//個人定位
+function locateUser(map) {
+  if (!navigator.geolocation) {
+    alert("❗ 你的瀏覽器不支援定位功能");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const userLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      // 在地圖上加上使用者位置的標記
+      const userMarker = new google.maps.Marker({
+        position: userLocation,
+        map: map,
+        title: "你的位置",
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 15,
+          fillColor: "#4285F4",
+          fillOpacity: 0.9,
+          strokeColor: "#fff",
+          strokeWeight: 2,
+        },
+      });
+
+      // 將地圖中心移動到使用者位置
+      map.setCenter(userLocation);
+      map.setZoom(15);
+    },
+    (error) => {
+      alert("❗ 無法取得你的定位資訊");
+      console.error(error);
+    }
+  );
+}
+
+//顯示附近景點
+// function showNearbyPlaces(category = "restaurant") {
+//   if (!map.value) {
+//     alert("地圖尚未初始化");
+//     return;
+//   }
+
+//   // 先取得使用者位置
+//   if (!navigator.geolocation) {
+//     alert("你的瀏覽器不支援定位功能");
+//     return;
+//   }
+
+//   navigator.geolocation.getCurrentPosition(
+//     (position) => {
+//       const location = {
+//         lat: position.coords.latitude,
+//         lng: position.coords.longitude,
+//       };
+
+//       userPosition.value = location;
+//       map.value.setCenter(location);
+
+//       // 設定 PlacesService
+//       const service = new google.maps.places.PlacesService(map.value);
+
+//       const request = {
+//         location,
+//         radius: 2000, // 公尺，半徑 2 公里內
+//         type: category,
+//       };
+
+//       // 清除之前的 marker
+//       nearbyMarkers.value.forEach((marker) => marker.setMap(null));
+//       nearbyMarkers.value = [];
+
+//       service.nearbySearch(request, (results, status) => {
+//         if (status === google.maps.places.PlacesServiceStatus.OK) {
+//           results.forEach((place) => {
+//             const marker = new google.maps.Marker({
+//               position: place.geometry.location,
+//               map: map.value,
+//               title: place.name,
+//             });
+
+//             nearbyMarkers.value.push(marker);
+//           });
+//         } else {
+//           alert("找不到相關地點");
+//           console.warn("Places API 錯誤：", status);
+//         }
+//       });
+//     },
+//     (error) => {
+//       alert("無法取得你的位置");
+//       console.error(error);
+//     }
+//   );
+// }
+
 onMounted(async () => {
   try {
     await loadGoogleMaps();
     initMap();
-
+    await locateUser(map);
+    // showNearbyPlaces("cafe");
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
@@ -589,5 +718,29 @@ onMounted(async () => {
   gap: 10px;
   align-items: center;
   z-index: 1;
+}
+
+.slide-fade-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+.slide-fade-enter-to {
+  transform: translateX(0);
+  opacity: 1;
+}
+.slide-fade-enter-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-leave-from {
+  transform: translateX(0);
+  opacity: 1;
+}
+.slide-fade-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
 }
 </style>
