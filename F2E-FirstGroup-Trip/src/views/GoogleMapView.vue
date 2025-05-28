@@ -150,12 +150,7 @@
       </div>
     </div>
   </div>
-  <!-- <div class="left-sidebar">
-    <button @click="showSelectBar">select-bar</button>
-    <button @click="showHome">home</button>
-    <button @click="restaurant">restaurant</button>
-    <button @click="hotel">hotel</button>
-  </div> -->
+
   <aside
     class="w-20 p-4 space-y-2 bg-gray-400/30 absolute left-5 top-1/2 translate-y-[-50%] rounded-full shadow-4xl backdrop-blur-2xl"
   >
@@ -545,66 +540,6 @@ function locateUser(map) {
     }
   );
 }
-
-//顯示附近景點
-// function showNearbyPlaces(category = "restaurant") {
-//   if (!map.value) {
-//     alert("地圖尚未初始化");
-//     return;
-//   }
-
-//   // 先取得使用者位置
-//   if (!navigator.geolocation) {
-//     alert("你的瀏覽器不支援定位功能");
-//     return;
-//   }
-
-//   navigator.geolocation.getCurrentPosition(
-//     (position) => {
-//       const location = {
-//         lat: position.coords.latitude,
-//         lng: position.coords.longitude,
-//       };
-
-//       userPosition.value = location;
-//       map.value.setCenter(location);
-
-//       // 設定 PlacesService
-//       const service = new google.maps.places.PlacesService(map.value);
-
-//       const request = {
-//         location,
-//         radius: 2000, // 公尺，半徑 2 公里內
-//         type: category,
-//       };
-
-//       // 清除之前的 marker
-//       nearbyMarkers.value.forEach((marker) => marker.setMap(null));
-//       nearbyMarkers.value = [];
-
-//       service.nearbySearch(request, (results, status) => {
-//         if (status === google.maps.places.PlacesServiceStatus.OK) {
-//           results.forEach((place) => {
-//             const marker = new google.maps.Marker({
-//               position: place.geometry.location,
-//               map: map.value,
-//               title: place.name,
-//             });
-
-//             nearbyMarkers.value.push(marker);
-//           });
-//         } else {
-//           alert("找不到相關地點");
-//           console.warn("Places API 錯誤：", status);
-//         }
-//       });
-//     },
-//     (error) => {
-//       alert("無法取得你的位置");
-//       console.error(error);
-//     }
-//   );
-// }
 
 onMounted(async () => {
   try {
