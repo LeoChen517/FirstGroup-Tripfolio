@@ -224,18 +224,20 @@
 import { ref, onMounted, watch } from "vue";
 
 // 地圖與搜尋
-const mapRef = ref(null);              // 地圖容器 (initMap)
-const searchQuery = ref("");           // 搜尋關鍵字 (searchPlace)
-const isToggled = ref(false);          // 切換地圖 / 卡片視圖
+const mapRef = ref(null); // 地圖容器 (initMap)
+const searchQuery = ref(""); // 搜尋關鍵字 (searchPlace)
+const isToggled = ref(false); // 切換地圖 / 卡片視圖
 
 // 地點資料
-const placeDetails = ref([]);          // 搜尋結果詳細資訊 (searchPlace, handleResults)
-const nextPageFunc = ref(null);        // 分頁函式 (handleResults, loadNextPage)
-const hasMoreResults = ref(false);     // 是否有更多結果 (searchPlace, handleResults)
+const placeDetails = ref([]); // 搜尋結果詳細資訊 (searchPlace, handleResults)
+const nextPageFunc = ref(null); // 分頁函式 (handleResults, loadNextPage)
+const hasMoreResults = ref(false); // 是否有更多結果 (searchPlace, handleResults)
 const defaultImage = "https://picsum.photos/1000?image";
 
-const selectedPlace = ref(null);
-const selectedPlacePhotoIndex = ref(0);
+// 選擇的地點與圖片
+const selectedPlace = ref(null); // 使用者選擇的地點 (點擊 marker 或卡片)
+const selectedPlacePhotoIndex = ref(0); // 當前顯示的圖片索引 (watch selectedPlace)
+
 const selectedMarkers = [];
 //
 const showCustomCategory = ref(false);
@@ -268,22 +270,16 @@ const placeCategories = ref([
   { type: "night_club", label: "夜店" },
 ]);
 
-
-// 選擇的地點與圖片
-const selectedPlace = ref(null);       // 使用者選擇的地點 (點擊 marker 或卡片)
-const selectedPlacePhotoIndex = ref(0);// 當前顯示的圖片索引 (watch selectedPlace)
-
 // 路線規劃
-const travelMode = ref("DRIVING");     // 交通方式 (select dropdown)
-const result = ref(null);              // 路線結果（距離與時間）(calculateRoute)
+const travelMode = ref("DRIVING"); // 交通方式 (select dropdown)
+const result = ref(null); // 路線結果（距離與時間）(calculateRoute)
 
 // Google Maps 實例與服務
-let map = null;                        // 地圖實例 (initMap)
-let markers = [];                      // 所有標記 (searchPlace, 點擊地圖)
-let service = null;                    // 地點服務 (initMap)
-let directionsService;                 // 路線服務 (onMounted)
-let directionsRenderer;                // 路線顯示器 (onMounted)
-
+let map = null; // 地圖實例 (initMap)
+let markers = []; // 所有標記 (searchPlace, 點擊地圖)
+let service = null; // 地點服務 (initMap)
+let directionsService; // 路線服務 (onMounted)
+let directionsRenderer; // 路線顯示器 (onMounted)
 
 //當 selectedPlace 改變時，重設圖片索引
 watch(selectedPlace, (newVal) => {
@@ -499,7 +495,6 @@ function recalculateRoute() {
     calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
 }
-
 
 //篩選景點
 function searchByCategory(type) {
