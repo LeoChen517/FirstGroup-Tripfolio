@@ -170,38 +170,39 @@
       >
         ➕
       </button>
-      <transition
+      <!-- 滑動效果 -->
+      <!-- <transition
         enter-active-class="transition-all duration-300 ease-in-out"
         enter-from-class="-translate-x-full opacity-0"
         enter-to-class="translate-x-0 opacity-100"
         leave-active-class="transition-all duration-300 ease-in-out"
         leave-from-class="translate-x-0 opacity-100"
         leave-to-class="-translate-x-full opacity-0"
+      > -->
+      <!-- 展開區塊 -->
+      <div
+        v-if="showCustomCategory"
+        class="absolute z-10 bg-gray-400/90 rounded-4xl p-3 w-80 shadow-md bottom-1 left-18 transform transition-all duration-300 ease-in-out translate-x-0 opacity-100"
       >
-        <!-- 展開區塊 -->
-        <div
-          v-if="showCustomCategory"
-          class="absolute z-10 bg-gray-400/90 rounded-4xl p-3 w-80 shadow-md bottom-1 left-18 transform transition-all duration-300 ease-in-out translate-x-0 opacity-100"
+        <button
+          @click="removeCategory(item)"
+          v-for="item in categories"
+          :key="item.type"
+          class="m-4"
         >
-          <button
-            @click="removeCategory(item)"
-            v-for="item in categories"
-            :key="item.type"
-            class="m-4"
-          >
-            {{ item.label }} ❌
-          </button>
-          <hr />
-          <button
-            @click="addCategory(item)"
-            v-for="item in placeCategories"
-            :key="item.type"
-            class="m-4 cursor-pointer"
-          >
-            {{ item.label }}
-          </button>
-        </div>
-      </transition>
+          {{ item.label }} ❌
+        </button>
+        <hr />
+        <button
+          @click="addCategory(item)"
+          v-for="item in placeCategories"
+          :key="item.type"
+          class="m-4 cursor-pointer"
+        >
+          {{ item.label }}
+        </button>
+      </div>
+      <!-- </transition> -->
     </div>
   </aside>
 
@@ -238,12 +239,11 @@ const defaultImage = "https://picsum.photos/1000?image";
 const selectedPlace = ref(null); // 使用者選擇的地點 (點擊 marker 或卡片)
 const selectedPlacePhotoIndex = ref(0); // 當前顯示的圖片索引 (watch selectedPlace)
 
-const selectedMarkers = [];
-//
-const showCustomCategory = ref(false);
-const maxCategoryCount = 5;
-//
-const userPosition = ref(null);
+//側邊景點種類篩選
+const showCustomCategory = ref(false); //是否顯示選單
+const maxCategoryCount = 5; //側邊骰選選單的最大長度
+
+//附近景點標示
 const nearbyMarkers = ref([]);
 
 //篩選種類
@@ -254,6 +254,7 @@ const categories = ref([
   { type: "tourist_attraction", label: "📍" },
   // { type: "other_options", label: "+" },
 ]);
+//待添加種類
 const placeCategories = ref([
   { type: "cafe", label: "咖啡廳" },
   { type: "museum", label: "博物館" },
@@ -287,30 +288,6 @@ watch(selectedPlace, (newVal) => {
     selectedPlacePhotoIndex.value = 0;
   }
 });
-
-function addCategory(item) {
-  const exists = categories.value.some((cat) => cat.type === item.type);
-  if (exists) return; // 已存在就不處理
-  if (categories.value.length >= maxCategoryCount) {
-    alert("❗ 已達上限，最多只能選擇 5 種類別");
-    return;
-  }
-
-  categories.value.push(item);
-  placeCategories.value = placeCategories.value.filter(
-    (cat) => cat.type !== item.type
-  );
-}
-function removeCategory(item) {
-  // 從已選類別移除
-  categories.value = categories.value.filter((cat) => cat.type !== item.type);
-
-  // 加回候選清單，如果還沒在裡面
-  const exists = placeCategories.value.some((cat) => cat.type === item.type);
-  if (!exists) {
-    placeCategories.value.push(item);
-  }
-}
 
 // 載入 Google Maps API
 function loadGoogleMaps() {
@@ -554,6 +531,33 @@ function locateUser(map) {
   );
 }
 
+//添加篩選種類
+function addCategory(item) {
+  const exists = categories.value.some((cat) => cat.type === item.type);
+  if (exists) return; // 已存在就不處理
+  if (categories.value.length >= maxCategoryCount) {
+    alert("❗ 已達上限，最多只能選擇 5 種類別");
+    return;
+  }
+
+  categories.value.push(item);
+  placeCategories.value = placeCategories.value.filter(
+    (cat) => cat.type !== item.type
+  );
+}
+
+//移除篩選種類
+function removeCategory(item) {
+  // 從已選類別移除
+  categories.value = categories.value.filter((cat) => cat.type !== item.type);
+
+  // 加回候選清單，如果還沒在裡面
+  const exists = placeCategories.value.some((cat) => cat.type === item.type);
+  if (!exists) {
+    placeCategories.value.push(item);
+  }
+}
+
 onMounted(async () => {
   try {
     await loadGoogleMaps();
@@ -606,7 +610,8 @@ onMounted(async () => {
   z-index: 1;
 }
 
-.slide-fade-enter-from {
+/* 滑動效果 */
+/* .slide-fade-enter-from {
   transform: translateX(-100%);
   opacity: 0;
 }
@@ -628,5 +633,5 @@ onMounted(async () => {
 }
 .slide-fade-leave-active {
   transition: all 0.3s ease;
-}
+} */
 </style>
