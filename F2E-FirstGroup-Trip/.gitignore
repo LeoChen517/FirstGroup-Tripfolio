@@ -29,8 +29,5 @@ coverage
 
 *.tsbuildinfo
 
-#假資料API
-backend/mock/
-
 .env.local
 .env
