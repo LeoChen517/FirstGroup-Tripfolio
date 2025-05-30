@@ -150,6 +150,62 @@
       </div>
     </div>
   </div>
+
+  <aside
+    class="w-20 p-4 space-y-2 bg-gray-400/30 absolute left-5 top-1/2 translate-y-[-50%] rounded-full shadow-4xl backdrop-blur-2xl"
+  >
+    <button
+      v-for="item in categories"
+      :key="item.type"
+      @click="searchByCategory(item.type)"
+      class="block w-full text-left px-3 py-2 rounded hover:bg-blue-100"
+    >
+      {{ item.label }}
+    </button>
+    <!-- 🔽 新增自訂分類選單 -->
+    <div class="relative">
+      <button
+        @click="showCustomCategory = !showCustomCategory"
+        class="block w-full text-left px-3 py-2 rounded hover:bg-green-100 text-green-700 font-semibold left-3.5"
+      >
+        ➕
+      </button>
+      <!-- 滑動效果 -->
+      <!-- <transition
+        enter-active-class="transition-all duration-300 ease-in-out"
+        enter-from-class="-translate-x-full opacity-0"
+        enter-to-class="translate-x-0 opacity-100"
+        leave-active-class="transition-all duration-300 ease-in-out"
+        leave-from-class="translate-x-0 opacity-100"
+        leave-to-class="-translate-x-full opacity-0"
+      > -->
+      <!-- 展開區塊 -->
+      <div
+        v-if="showCustomCategory"
+        class="absolute z-10 bg-gray-400/90 rounded-4xl p-3 w-80 shadow-md bottom-1 left-18 transform transition-all duration-300 ease-in-out translate-x-0 opacity-100"
+      >
+        <button
+          @click="removeCategory(item)"
+          v-for="item in categories"
+          :key="item.type"
+          class="m-4"
+        >
+          {{ item.label }} ❌
+        </button>
+        <hr />
+        <button
+          @click="addCategory(item)"
+          v-for="item in placeCategories"
+          :key="item.type"
+          class="m-4 cursor-pointer"
+        >
+          {{ item.label }}
+        </button>
+      </div>
+      <!-- </transition> -->
+    </div>
+  </aside>
+
   <div class="controls">
     <div v-if="result">
       <p>兩點距離：{{ result.distance }}，預估時間：{{ result.duration }}</p>
@@ -169,31 +225,62 @@
 import { ref, onMounted, watch } from "vue";
 
 // 地圖與搜尋
-const mapRef = ref(null);              // 地圖容器 (initMap)
-const searchQuery = ref("");           // 搜尋關鍵字 (searchPlace)
-const isToggled = ref(false);          // 切換地圖 / 卡片視圖
+const mapRef = ref(null); // 地圖容器 (initMap)
+const searchQuery = ref(""); // 搜尋關鍵字 (searchPlace)
+const isToggled = ref(false); // 切換地圖 / 卡片視圖
 
 // 地點資料
-const placeDetails = ref([]);          // 搜尋結果詳細資訊 (searchPlace, handleResults)
-const nextPageFunc = ref(null);        // 分頁函式 (handleResults, loadNextPage)
-const hasMoreResults = ref(false);     // 是否有更多結果 (searchPlace, handleResults)
+const placeDetails = ref([]); // 搜尋結果詳細資訊 (searchPlace, handleResults)
+const nextPageFunc = ref(null); // 分頁函式 (handleResults, loadNextPage)
+const hasMoreResults = ref(false); // 是否有更多結果 (searchPlace, handleResults)
 const defaultImage = "https://picsum.photos/1000?image";
 
 // 選擇的地點與圖片
-const selectedPlace = ref(null);       // 使用者選擇的地點 (點擊 marker 或卡片)
-const selectedPlacePhotoIndex = ref(0);// 當前顯示的圖片索引 (watch selectedPlace)
+const selectedPlace = ref(null); // 使用者選擇的地點 (點擊 marker 或卡片)
+const selectedPlacePhotoIndex = ref(0); // 當前顯示的圖片索引 (watch selectedPlace)
+
+//側邊景點種類篩選
+const showCustomCategory = ref(false); //是否顯示選單
+const maxCategoryCount = 5; //側邊骰選選單的最大長度
+
+//附近景點標示
+const nearbyMarkers = ref([]);
+
+//篩選種類
+const categories = ref([
+  { type: "restaurant", label: "🍽️" },
+  { type: "lodging", label: "🏨" },
+  { type: "residence", label: "🏠" },
+  { type: "tourist_attraction", label: "📍" },
+  // { type: "other_options", label: "+" },
+]);
+//待添加種類
+const placeCategories = ref([
+  { type: "cafe", label: "咖啡廳" },
+  { type: "museum", label: "博物館" },
+  { type: "park", label: "公園" },
+  { type: "zoo", label: "動物園" },
+  { type: "amusement_park", label: "遊樂園" },
+  { type: "aquarium", label: "水族館" },
+  { type: "art_gallery", label: "藝廊" },
+  { type: "bar", label: "酒吧" },
+  { type: "book_store", label: "書店" },
+  { type: "gym", label: "健身房" },
+  { type: "shopping_mall", label: "購物中心" },
+  { type: "supermarket", label: "超市" },
+  { type: "night_club", label: "夜店" },
+]);
 
 // 路線規劃
-const travelMode = ref("DRIVING");     // 交通方式 (select dropdown)
-const result = ref(null);              // 路線結果（距離與時間）(calculateRoute)
+const travelMode = ref("DRIVING"); // 交通方式 (select dropdown)
+const result = ref(null); // 路線結果（距離與時間）(calculateRoute)
 
 // Google Maps 實例與服務
-let map = null;                        // 地圖實例 (initMap)
-let markers = [];                      // 所有標記 (searchPlace, 點擊地圖)
-let service = null;                    // 地點服務 (initMap)
-let directionsService;                 // 路線服務 (onMounted)
-let directionsRenderer;                // 路線顯示器 (onMounted)
-
+let map = null; // 地圖實例 (initMap)
+let markers = []; // 所有標記 (searchPlace, 點擊地圖)
+let service = null; // 地點服務 (initMap)
+let directionsService; // 路線服務 (onMounted)
+let directionsRenderer; // 路線顯示器 (onMounted)
 
 //當 selectedPlace 改變時，重設圖片索引
 watch(selectedPlace, (newVal) => {
@@ -235,6 +322,24 @@ function initMap() {
     streetViewControlOptions: {
       position: google.maps.ControlPosition.LEFT_TOP,
     },
+    // styles: [
+    //   {
+    //     featureType: "poi",
+    //     elementType: "labels",
+    //     stylers: [{ visibility: "off" }],
+    //   },
+
+    //   {
+    //     featureType: "transit.station",
+    //     elementType: "all",
+    //     stylers: [{ visibility: "off" }],
+    //   },
+    //   {
+    //     featureType: "road",
+    //     elementType: "labels",
+    //     stylers: [{ visibility: "off" }],
+    //   },
+    // ],
   });
   service = new google.maps.places.PlacesService(map);
 }
@@ -367,12 +472,99 @@ function recalculateRoute() {
     calculateRoute(markers[0].getPosition(), markers[1].getPosition());
   }
 }
+
+//篩選景點
+function searchByCategory(type) {
+  if (!map || !type) return;
+
+  // 清除舊有 marker
+  markers.forEach((m) => m.setMap(null));
+  markers = [];
+
+  const service = new window.google.maps.places.PlacesService(map);
+  const request = {
+    location: map.getCenter(),
+    radius: 1000,
+    type,
+  };
+
+  service.nearbySearch(request, handleResults);
+}
+
+//個人定位
+function locateUser(map) {
+  if (!navigator.geolocation) {
+    alert("❗ 你的瀏覽器不支援定位功能");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const userLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      // 在地圖上加上使用者位置的標記
+      const userMarker = new google.maps.Marker({
+        position: userLocation,
+        map: map,
+        title: "你的位置",
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 15,
+          fillColor: "#4285F4",
+          fillOpacity: 0.9,
+          strokeColor: "#fff",
+          strokeWeight: 2,
+        },
+      });
+
+      // 將地圖中心移動到使用者位置
+      map.setCenter(userLocation);
+      map.setZoom(15);
+    },
+    (error) => {
+      alert("❗ 無法取得你的定位資訊");
+      console.error(error);
+    }
+  );
+}
+
+//添加篩選種類
+function addCategory(item) {
+  const exists = categories.value.some((cat) => cat.type === item.type);
+  if (exists) return; // 已存在就不處理
+  if (categories.value.length >= maxCategoryCount) {
+    alert("❗ 已達上限，最多只能選擇 5 種類別");
+    return;
+  }
+
+  categories.value.push(item);
+  placeCategories.value = placeCategories.value.filter(
+    (cat) => cat.type !== item.type
+  );
+}
+
+//移除篩選種類
+function removeCategory(item) {
+  // 從已選類別移除
+  categories.value = categories.value.filter((cat) => cat.type !== item.type);
+
+  // 加回候選清單，如果還沒在裡面
+  const exists = placeCategories.value.some((cat) => cat.type === item.type);
+  if (!exists) {
+    placeCategories.value.push(item);
+  }
+}
+
 onMounted(async () => {
   try {
-    await loadGoogleMaps(); // 等待 API 載入
-    initMap(); // 初始化地圖
+    await loadGoogleMaps();
+    initMap();
+    await locateUser(map);
+    // showNearbyPlaces("cafe");
 
-    // 初始化方向服務
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
@@ -417,4 +609,29 @@ onMounted(async () => {
   align-items: center;
   z-index: 1;
 }
+
+/* 滑動效果 */
+/* .slide-fade-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+.slide-fade-enter-to {
+  transform: translateX(0);
+  opacity: 1;
+}
+.slide-fade-enter-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-leave-from {
+  transform: translateX(0);
+  opacity: 1;
+}
+.slide-fade-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+} */
 </style>
